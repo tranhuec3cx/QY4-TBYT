@@ -11,9 +11,20 @@
     return u.pathname + u.search + u.hash;
   }
 
+  function normalizeDocumentActor(input, options) {
+    if (typeof input !== "string" || !(options?.body instanceof FormData)) return;
+    const u = new URL(input, window.location.origin);
+    if (u.pathname !== "/api/documents") return;
+    const user = window.__QY4_CURRENT_USER || {};
+    const actor = String(user.full_name || user.username || "").trim();
+    if (actor) options.body.set("updated_by", actor);
+  }
+
   window.fetch = async (...args) => {
-    const [input, options] = args;
-    args[0] = scopeIncidentMultipartUrl(input, options);
+    let [input, options] = args;
+    input = scopeIncidentMultipartUrl(input, options);
+    normalizeDocumentActor(input, options);
+    args[0] = input;
     const res = await nativeFetch(...args);
     if (res.status === 401) {
       const next = encodeURIComponent(window.location.pathname + window.location.search);
@@ -71,12 +82,29 @@
   function disableLegacyInsuranceSerialAutofill() {
     if (window.location.pathname !== "/index.html" && window.location.pathname !== "/") return;
     const old = document.getElementById("insuranceInput");
-    if (!old || old.dataset.p2Clean === "1") return;
-    const clone = old.cloneNode(true);
-    clone.dataset.p2Clean = "1";
-    old.replaceWith(clone);
+    if (old && old.dataset.p2Clean !== "1") {
+      const clone = old.cloneNode(true);
+      clone.dataset.p2Clean = "1";
+      old.replaceWith(clone);
+    }
+    // P3: Serial hãng và mã HIS/BHXH là hai trường độc lập. Vô hiệu luôn fallback legacy
+    // trong saveDevice(), không chỉ gỡ listener tự điền của ô Mã bảo hiểm.
+    try { window.extractSerialFromHisCode = () => ""; } catch {}
     const serial = document.getElementById("serialInput");
     if (serial) serial.placeholder = serial.placeholder || "Nhập Serial Number của hãng";
+  }
+
+  function installInspectionPreSubmitGuard() {
+    if (window.location.pathname !== "/inspections.html") return;
+    document.addEventListener("submit", (event) => {
+      const form = event.target;
+      if (!form || form.id !== "form") return;
+      const deviceId = String(document.getElementById("deviceId")?.value || "").trim();
+      if (deviceId) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      alert("Vui lòng chọn thiết bị trước khi tải file hoặc lưu hồ sơ kiểm định.");
+    }, true);
   }
 
   async function init() {
@@ -96,10 +124,11 @@
       applyUserUi(user);
       disableLegacyInsuranceSerialAutofill();
     } catch (e) {
-      console.warn("P2 auth client:", e);
+      console.warn("P2/P3 auth client:", e);
     }
   }
 
+  installInspectionPreSubmitGuard();
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();
