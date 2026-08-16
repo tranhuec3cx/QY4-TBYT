@@ -5,6 +5,7 @@ const Module = require("module");
 const serverPath = path.join(__dirname, "server.js");
 const p1ClientPath = path.join(__dirname, "public", "p1-incident-repair.js");
 const p2SecurityPath = path.join(__dirname, "p2-security.js");
+const p2ScopePath = path.join(__dirname, "p2-scope-guard.js");
 const p2ClientPath = path.join(__dirname, "public", "p2-auth-client.js");
 const loginPath = path.join(__dirname, "public", "login.html");
 const changePasswordPath = path.join(__dirname, "public", "change-password.html");
@@ -86,7 +87,7 @@ function hardenServerSource(input) {
     source,
     "P2 attach security middleware",
     'app.use(express.json({ limit: "10mb" }));',
-    'app.use(express.json({ limit: "10mb" }));\nconst p2Security = require("./p2-security").attach({\n  app, express, Database, dbPath,\n  publicDir: path.join(__dirname, "public"),\n  uploadsDir, qrUploadsDir\n});'
+    'app.use(express.json({ limit: "10mb" }));\nconst p2Security = require("./p2-security").attach({\n  app, express, Database, dbPath,\n  publicDir: path.join(__dirname, "public"),\n  uploadsDir, qrUploadsDir\n});\nrequire("./p2-scope-guard").attach({\n  app, Database, dbPath,\n  getUser: p2Security.getUser,\n  isTech: p2Security.isTech\n});'
   );
 
   source = replaceOnce(
@@ -103,12 +104,10 @@ function hardenServerSource(input) {
     'initDb();\np2Security.initialize();'
   );
 
-  // Sửa nốt các điểm legacy còn tự sinh dữ liệu mẫu trong initExtendedModules.
   source = replaceOnce(source, "P2 demo inspection seed", '  if (inspectionCount === 0) {', '  if (process.env.DEMO_MODE === "true" && inspectionCount === 0) {');
   source = replaceOnce(source, "P2 demo quality seed", '  if (qualityCount === 0) {', '  if (process.env.DEMO_MODE === "true" && qualityCount === 0) {');
   source = replaceOnce(source, "P2 demo usage seed", '  if (usageCount === 0) {', '  if (process.env.DEMO_MODE === "true" && usageCount === 0) {');
 
-  // Sửa nốt legacy Serial: backend không tự suy Serial từ trường insurance_code.
   source = replaceOnce(
     source,
     "P2 strict serial payload",
@@ -124,19 +123,20 @@ const original = fs.readFileSync(serverPath, "utf8");
 const hardened = hardenServerSource(original);
 
 if (checkOnly) {
-  [p1ClientPath, p2SecurityPath, p2ClientPath, loginPath, changePasswordPath].forEach(p => { if (!fs.existsSync(p)) throw new Error(`[SAFETY] Thiếu tệp bắt buộc: ${p}`); });
+  [p1ClientPath, p2SecurityPath, p2ScopePath, p2ClientPath, loginPath, changePasswordPath].forEach(p => { if (!fs.existsSync(p)) throw new Error(`[SAFETY] Thiếu tệp bắt buộc: ${p}`); });
   new Function(hardened);
   new Function(fs.readFileSync(p1ClientPath, "utf8"));
   new Function(fs.readFileSync(p2SecurityPath, "utf8"));
+  new Function(fs.readFileSync(p2ScopePath, "utf8"));
   new Function(fs.readFileSync(p2ClientPath, "utf8"));
   console.log("[SAFETY] OK - P0 + P1 + P2 đã khớp server.js và hợp lệ cú pháp.");
-  console.log("[SAFETY] P2: đăng nhập phiên, phân quyền vai trò/khoa, audit đúng tài khoản, bảo vệ uploads và khóa demo legacy.");
+  console.log("[SAFETY] P2: đăng nhập phiên, phân quyền vai trò/khoa, audit đúng tài khoản, bảo vệ uploads, khóa hồ sơ chi tiết ngoài khoa và khóa demo legacy.");
   console.log(`[SAFETY] DEMO_MODE=${demoMode ? "true" : "false"}`);
   process.exit(0);
 }
 
 console.log(`[SAFETY] Khởi động QY4-TTBYT ở chế độ ${demoMode ? "DEMO" : "PRODUCTION"}.`);
-if (!demoMode) console.log("[SAFETY] Đã áp dụng P0 + P1 + P2 (xác thực/phân quyền/audit/bảo vệ tệp). ");
+if (!demoMode) console.log("[SAFETY] Đã áp dụng P0 + P1 + P2 (xác thực/phân quyền/audit/bảo vệ tệp/phạm vi khoa). ");
 
 const compiled = new Module(serverPath, module.parent);
 compiled.filename = serverPath;
