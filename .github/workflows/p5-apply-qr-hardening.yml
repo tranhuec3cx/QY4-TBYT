@@ -16,94 +16,38 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: fix/p5-qr-public
-      - name: Patch public QR surface and P2 tests
+      - name: Minimize public API surface and extend tests
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
           sec = Path('p2-security.js')
           s = sec.read_text(encoding='utf-8')
-          marker = 'P5_SAFE_PUBLIC_DEVICE'
-          if marker not in s:
-              start = s.find('  function publicApi(pathname) {')
-              end = s.find('\n  function qrPostRateAllowed', start)
-              if start < 0 or end < 0:
-                  raise SystemExit('Không xác định được khối publicApi cũ để vá an toàn')
-              new = '''  // P5_SAFE_PUBLIC_DEVICE: QR công khai chỉ lộ tập thông tin tối thiểu cần để nhận diện máy.
-          function publicDevicePayloadBy(field, value) {
-            if (!['id','device_code'].includes(field)) return null;
-            const row = db().prepare(`
-              SELECT dv.id,dv.device_code,dv.name,dv.department_code,d.name AS department_name,
-                     dv.location,dv.status,dv.model
-              FROM devices dv
-              LEFT JOIN departments d ON d.code=dv.department_code
-              WHERE dv.${field}=?
-              LIMIT 1
-            `).get(value);
-            return row || null;
-          }
-
-          app.get("/api/public/device/:id", (req, res) => {
-            const id = Number(req.params.id || 0);
-            if (!id) return res.status(400).json({ error: "Mã thiết bị không hợp lệ." });
-            const row = publicDevicePayloadBy('id', id);
-            if (!row) return res.status(404).json({ error: "Không tìm thấy thiết bị." });
-            res.json(row);
-          });
-
-          app.get("/api/public/device-code/:code", (req, res) => {
-            const code = String(req.params.code || '').trim().slice(0, 120);
-            if (!code) return res.status(400).json({ error: "Thiếu mã thiết bị." });
-            const row = publicDevicePayloadBy('device_code', code);
-            if (!row) return res.status(404).json({ error: "Không tìm thấy thiết bị." });
-            res.json(row);
-          });
-
-          function publicApi(pathname) {
-            return pathname === "/qr/png" || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";
-          }
-          '''
-              s = s[:start] + new + s[end:]
+          old = 'return pathname === "/qr/png" || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";'
+          new = 'return pathname === "/qr/checks" || pathname.startsWith("/public/");'
+          if old in s:
+              s = s.replace(old, new, 1)
               sec.write_text(s, encoding='utf-8')
+          elif new not in s:
+              raise SystemExit('Không xác định được publicApi P5 để thu hẹp')
 
           test = Path('test-p2-security.js')
           t = test.read_text(encoding='utf-8')
-          if 'P5 QR public surface' not in t:
-              old_schema = '    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, name TEXT);'
-              new_schema = '    CREATE TABLE departments (code TEXT PRIMARY KEY, name TEXT);\n    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, device_code TEXT, name TEXT, location TEXT, status TEXT, model TEXT);'
-              if old_schema not in t:
-                  raise SystemExit('Không tìm thấy schema devices trong test P2')
-              t = t.replace(old_schema, new_schema, 1)
+          marker = 'P5 internal QR helpers require auth'
+          if marker not in t:
+              anchor = "    assert.equal(publicDevice.id, 1);\n"
+              if anchor not in t:
+                  raise SystemExit('Không tìm thấy điểm chèn kiểm thử P5')
+              addition = '''
 
-              line1 = "  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(1,'A10','Máy A10');"
-              line2 = "  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(2,'C7','Máy C7');"
-              if line1 not in t or line2 not in t:
-                  raise SystemExit('Không tìm thấy seed devices trong test P2')
-              replacement = """  setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('A10','Khoa A10');
-          setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('C7','Khoa C7');
-          setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(1,'A10','A10.DT.0001','Máy A10','Buồng 1','Đang hoạt động','M1');
-          setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(2,'C7','C7.XQ.0001','Máy C7','Phòng XQ','Đang hoạt động','M2');"""
-              t = t.replace(line1 + '\n' + line2, replacement, 1)
-
-              old_check = "    r = await req('/api/qr/device/1');\n    assert.equal(r.status, 200, 'QR public phải truy cập được không cần phiên');"
-              if old_check not in t:
-                  raise SystemExit('Không tìm thấy assertion QR public cũ trong test P2')
-              new_check = """    // P5 QR public surface: payload đầy đủ /api/qr/device/* phải cần đăng nhập.
-              r = await req('/api/qr/device/1');
-              assert.equal(r.status, 401, 'Payload QR đầy đủ không được public khi chưa đăng nhập');
-
-              r = await req('/api/public/device/1');
-              assert.equal(r.status, 200, 'QR public được đọc payload tối thiểu theo ID');
-              let publicDevice = await json(r);
-              assert.equal(publicDevice.device_code, 'A10.DT.0001');
-              assert.ok(!Object.prototype.hasOwnProperty.call(publicDevice, 'serial'), 'QR public không được lộ Serial');
-              assert.ok(!Object.prototype.hasOwnProperty.call(publicDevice, 'cost'), 'QR public không được lộ nguyên giá');
-
-              r = await req('/api/public/device-code/A10.DT.0001');
-              assert.equal(r.status, 200, 'QR public được tra theo mã thiết bị ổn định');
-              publicDevice = await json(r);
-              assert.equal(publicDevice.id, 1);"""
-              t = t.replace(old_check, new_check, 1)
+              // P5 internal QR helpers require auth: generator và thông tin mạng chỉ dành cho người dùng nội bộ.
+              r = await req('/api/qr/png?data=test');
+              assert.equal(r.status, 401, 'QR PNG generator không được public');
+              r = await req('/api/system/qr-origins');
+              assert.equal(r.status, 401, 'Danh sách IP LAN/QR origins không được public');
+              r = await req('/api/system/public-qr-check');
+              assert.equal(r.status, 401, 'Kiểm tra cấu hình QR public không được public');'''
+              t = t.replace(anchor, anchor + addition, 1)
               test.write_text(t, encoding='utf-8')
           PY
       - name: Verify patched security module
@@ -115,11 +59,11 @@ jobs:
       - name: Commit P5 hardening
         run: |
           if git diff --quiet -- p2-security.js test-p2-security.js; then
-            echo "P5 QR hardening already applied"
+            echo "P5 public surface already minimized"
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add p2-security.js test-p2-security.js
-          git commit -m "P5: thu hẹp bề mặt endpoint QR công khai"
+          git commit -m "P5: khóa QR generator và endpoint hệ thống khỏi public"
           git push origin HEAD:fix/p5-qr-public
