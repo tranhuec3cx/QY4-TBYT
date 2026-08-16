@@ -25,10 +25,10 @@ jobs:
           s = sec.read_text(encoding='utf-8')
           marker = 'P5_SAFE_PUBLIC_DEVICE'
           if marker not in s:
-              old = '''  function publicApi(pathname) {
-            return pathname === "/qr/png" || pathname.startsWith("/qr/device/") || pathname.startsWith("/qr/device-code/") || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";
-          }
-          '''
+              start = s.find('  function publicApi(pathname) {')
+              end = s.find('\n  function qrPostRateAllowed', start)
+              if start < 0 or end < 0:
+                  raise SystemExit('Không xác định được khối publicApi cũ để vá an toàn')
               new = '''  // P5_SAFE_PUBLIC_DEVICE: QR công khai chỉ lộ tập thông tin tối thiểu cần để nhận diện máy.
           function publicDevicePayloadBy(field, value) {
             if (!['id','device_code'].includes(field)) return null;
@@ -63,34 +63,32 @@ jobs:
             return pathname === "/qr/png" || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";
           }
           '''
-              if old not in s:
-                  raise SystemExit('Không tìm thấy publicApi cũ để vá an toàn')
-              s = s.replace(old, new, 1)
+              s = s[:start] + new + s[end:]
               sec.write_text(s, encoding='utf-8')
 
           test = Path('test-p2-security.js')
           t = test.read_text(encoding='utf-8')
           if 'P5 QR public surface' not in t:
               old_schema = '    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, name TEXT);'
-              new_schema = '''    CREATE TABLE departments (code TEXT PRIMARY KEY, name TEXT);
-              CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, device_code TEXT, name TEXT, location TEXT, status TEXT, model TEXT);'''
+              new_schema = '    CREATE TABLE departments (code TEXT PRIMARY KEY, name TEXT);\n    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, device_code TEXT, name TEXT, location TEXT, status TEXT, model TEXT);'
               if old_schema not in t:
                   raise SystemExit('Không tìm thấy schema devices trong test P2')
               t = t.replace(old_schema, new_schema, 1)
 
-              old_seed = '''  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(1,'A10','Máy A10');
-          setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(2,'C7','Máy C7');'''
-              new_seed = '''  setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('A10','Khoa A10');
+              line1 = "  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(1,'A10','Máy A10');"
+              line2 = "  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(2,'C7','Máy C7');"
+              if line1 not in t or line2 not in t:
+                  raise SystemExit('Không tìm thấy seed devices trong test P2')
+              replacement = """  setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('A10','Khoa A10');
           setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('C7','Khoa C7');
           setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(1,'A10','A10.DT.0001','Máy A10','Buồng 1','Đang hoạt động','M1');
-          setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(2,'C7','C7.XQ.0001','Máy C7','Phòng XQ','Đang hoạt động','M2');'''
-              if old_seed not in t:
-                  raise SystemExit('Không tìm thấy seed devices trong test P2')
-              t = t.replace(old_seed, new_seed, 1)
+          setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(2,'C7','C7.XQ.0001','Máy C7','Phòng XQ','Đang hoạt động','M2');"""
+              t = t.replace(line1 + '\n' + line2, replacement, 1)
 
-              old_check = '''    r = await req('/api/qr/device/1');
-              assert.equal(r.status, 200, 'QR public phải truy cập được không cần phiên');'''
-              new_check = '''    // P5 QR public surface: payload đầy đủ /api/qr/device/* phải cần đăng nhập.
+              old_check = "    r = await req('/api/qr/device/1');\n    assert.equal(r.status, 200, 'QR public phải truy cập được không cần phiên');"
+              if old_check not in t:
+                  raise SystemExit('Không tìm thấy assertion QR public cũ trong test P2')
+              new_check = """    // P5 QR public surface: payload đầy đủ /api/qr/device/* phải cần đăng nhập.
               r = await req('/api/qr/device/1');
               assert.equal(r.status, 401, 'Payload QR đầy đủ không được public khi chưa đăng nhập');
 
@@ -104,9 +102,7 @@ jobs:
               r = await req('/api/public/device-code/A10.DT.0001');
               assert.equal(r.status, 200, 'QR public được tra theo mã thiết bị ổn định');
               publicDevice = await json(r);
-              assert.equal(publicDevice.id, 1);'''
-              if old_check not in t:
-                  raise SystemExit('Không tìm thấy assertion QR public cũ trong test P2')
+              assert.equal(publicDevice.id, 1);"""
               t = t.replace(old_check, new_check, 1)
               test.write_text(t, encoding='utf-8')
           PY
