@@ -29,7 +29,7 @@
   function p3DeviceCodeMap() {
     return new Map((RAW.devices || []).map(d => [String(d.device_code || ''), d]));
   }
-  function p3ScopedRaw(rows, dateField) {
+  function p3ScopedRaw(rows, dateSelector) {
     const dept = q('deptFilter')?.value || 'ALL';
     const group = q('groupFilter')?.value || 'ALL';
     const from = q('fromDate')?.value || '';
@@ -39,7 +39,8 @@
       const d = dm.get(Number(r.device_id)) || {};
       const rowDept = r.department_code || d.department_code || '';
       const rowGroup = r.group_code || d.group_code || '';
-      const dateOk = dateField ? inDateRange(r[dateField], from, to) : true;
+      const rawDate = typeof dateSelector === 'function' ? dateSelector(r) : (dateSelector ? r[dateSelector] : '');
+      const dateOk = dateSelector ? inDateRange(rawDate, from, to) : true;
       return dateOk && (dept === 'ALL' || rowDept === dept) && (group === 'ALL' || rowGroup === group);
     });
   }
@@ -97,9 +98,10 @@
     return { columns: cols.due, rows };
   }
   function p3RepairCostByDept() {
-    const repairs = p3ScopedRaw(RAW.repairs || [], 'repair_date');
+    const dm = p3DeviceMap();
+    const repairs = p3ScopedRaw(RAW.repairs || [], r => r.received_at || r.repair_date);
     const grouped = summarize(repairs, r => {
-      const d = p3DeviceMap().get(Number(r.device_id)) || {};
+      const d = dm.get(Number(r.device_id)) || {};
       return r.department_code || d.department_code || 'Chưa rõ';
     });
     return { columns: cols.summary, rows: grouped.map((r,i) => [i+1, r.key, getDeptName(r.key), r.count, r.value, 'Phiếu sửa chữa']) };
@@ -125,7 +127,8 @@
   }
   function p3AnnualUsage() {
     const devices = p3SelectedDevices();
-    const repairs = p3ScopedRaw(RAW.repairs || [], 'repair_date');
+    const dm = p3DeviceMap();
+    const repairs = p3ScopedRaw(RAW.repairs || [], r => r.received_at || r.repair_date);
     const latestInsp = p3LatestByRecordDate(RAW.inspections || [], 'inspection_date');
     const grouped = summarize(devices, d => d.department_code || 'Chưa rõ');
     return {
@@ -139,7 +142,7 @@
           ds.filter(d => p3IsInUse(d.status)).length,
           ds.filter(d => p3IsStopped(d.status) || p3IsWaitingRepair(d.status)).length,
           repairs.filter(x => {
-            const d = p3DeviceMap().get(Number(x.device_id)) || {};
+            const d = dm.get(Number(x.device_id)) || {};
             return (x.department_code || d.department_code || '') === r.key;
           }).length,
           ds.filter(d => latestInsp.has(Number(d.id))).length,
@@ -169,6 +172,8 @@
         ...data,
         rows: data.rows.map(row => row.length > data.columns.length ? [...row.slice(0, 10), row[row.length - 1]] : row)
       };
+    } else if (['deviceListTemplate','cqySupplied'].includes(type)) {
+      data = { ...data, rows: data.rows.map(row => row.slice(0, data.columns.length)) };
     }
 
     if (['incidents','repairs','openRepairs','maintenances','inspections'].includes(type)) {
