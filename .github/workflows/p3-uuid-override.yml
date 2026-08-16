@@ -1,0 +1,56 @@
+name: P3 UUID Transitive Override
+
+on:
+  push:
+    branches:
+      - fix/p3-dependency-modules
+    paths:
+      - .github/workflows/p3-uuid-override.yml
+
+permissions:
+  contents: write
+
+jobs:
+  override-uuid:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/p3-dependency-modules
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Override vulnerable transitive uuid
+        run: |
+          npm pkg set 'overrides.uuid=^11.1.1'
+          npm install --package-lock-only
+      - name: Verify audit and ExcelJS basic workbook
+        run: |
+          npm ci
+          npm audit --omit=dev
+          node - <<'NODE'
+          const ExcelJS = require('exceljs');
+          (async () => {
+            const wb = new ExcelJS.Workbook();
+            const ws = wb.addWorksheet('Test');
+            ws.addRow(['A','B']);
+            ws.addRow([1,2]);
+            const buf = await wb.xlsx.writeBuffer();
+            if (!buf || buf.length < 100) throw new Error('ExcelJS writeBuffer không hoạt động sau uuid override');
+            console.log(`[P3 UUID] ExcelJS writeBuffer OK: ${buf.length} bytes`);
+          })().catch(e => { console.error(e); process.exit(1); });
+          NODE
+      - name: Commit dependency files
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "P3: override uuid lên bản đã vá"
+          git push origin HEAD:fix/p3-dependency-modules
