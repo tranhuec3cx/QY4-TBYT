@@ -336,7 +336,7 @@ app.get("/api/public/device-code/:code", (req, res) => {
 });
 
 function publicApi(pathname) {
-  return pathname === "/qr/png" || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";
+  return pathname === "/qr/checks" || pathname.startsWith("/public/");
 }
 
   function qrPostRateAllowed(req) {

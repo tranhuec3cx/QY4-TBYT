@@ -100,6 +100,14 @@ setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,
     publicDevice = await json(r);
     assert.equal(publicDevice.id, 1);
 
+
+    // P5 internal QR helpers require auth: generator và thông tin mạng chỉ dành cho người dùng nội bộ.
+    r = await req('/api/qr/png?data=test');
+    assert.equal(r.status, 401, 'QR PNG generator không được public');
+    r = await req('/api/system/qr-origins');
+    assert.equal(r.status, 401, 'Danh sách IP LAN/QR origins không được public');
+    r = await req('/api/system/public-qr-check');
+    assert.equal(r.status, 401, 'Kiểm tra cấu hình QR public không được public');
     r = await req('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:'admin',password:'sai'}) });
     assert.equal(r.status, 401, 'Mật khẩu sai phải bị từ chối');
 
