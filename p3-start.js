@@ -11,11 +11,17 @@ const excelDist = path.join(__dirname, 'node_modules', 'exceljs', 'dist');
 const excelBundle = path.join(excelDist, 'exceljs.min.js');
 const legacyAlias = path.join(excelDist, 'xlsx.full.min.js');
 const compatPath = path.join(__dirname, 'public', 'xlsx-compat.js');
+const publicDir = path.join(__dirname, 'public');
+const deviceDetailBasePath = path.join(publicDir, 'device-detail.js');
+const deviceDetailP3Path = path.join(publicDir, 'device-detail-p3-fix.js');
 
 if (fs.existsSync(excelBundle) && fs.existsSync(compatPath)) {
   const bundle = fs.readFileSync(excelBundle, 'utf8');
   const compat = fs.readFileSync(compatPath, 'utf8');
   fs.writeFileSync(legacyAlias, `${bundle}\n;${compat}\n`, 'utf8');
+}
+if (!fs.existsSync(deviceDetailP3Path)) {
+  throw new Error('[P3] Thiếu public/device-detail-p3-fix.js; dừng để tránh chạy hồ sơ thiết bị không đồng bộ.');
 }
 
 const originalStatic = express.static;
@@ -23,7 +29,20 @@ express.static = function qy4Static(root, options) {
   const normalized = path.normalize(String(root || ''));
   const legacyXlsxRoot = path.normalize(path.join(__dirname, 'node_modules', 'xlsx', 'dist'));
   if (normalized === legacyXlsxRoot) root = excelDist;
-  return originalStatic.call(this, root, options);
+  const middleware = originalStatic.call(this, root, options);
+  if (normalized === path.normalize(publicDir)) {
+    return function qy4P3PublicStatic(req, res, next) {
+      const requestPath = String(req.path || req.url || '').split('?')[0];
+      if (requestPath === '/device-detail.js' && fs.existsSync(deviceDetailBasePath)) {
+        const base = fs.readFileSync(deviceDetailBasePath, 'utf8');
+        const fix = fs.readFileSync(deviceDetailP3Path, 'utf8');
+        res.type('application/javascript').send(`${base}\n\n;${fix}\n`);
+        return;
+      }
+      return middleware(req, res, next);
+    };
+  }
+  return middleware;
 };
 
 // P3: server.js cũ dùng chung seedData() cho cả production và demo. Trên DB trắng điều đó
@@ -99,7 +118,7 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
     source,
     'soft cancel inspection',
     'app.delete("/api/inspections/:id", (req, res) => {\n  db.prepare("DELETE FROM inspections WHERE id=?").run(req.params.id);\n  res.json({ ok: true });\n});',
-    'app.delete("/api/inspections/:id", (req, res) => {\n  const old = db.prepare("SELECT * FROM inspections WHERE id=?").get(req.params.id);\n  if (!old) return res.status(404).json({ error: "Không tìm thấy hồ sơ kiểm định." });\n  const reason = String(req.body?.reason || "Hủy hồ sơ nhập nhầm").trim();\n  db.prepare("UPDATE inspections SET cancelled_at=?, cancel_reason=? WHERE id=?").run(nowSql(), reason, req.params.id);\n  writeHistory("inspection", Number(req.params.id), old.organization || "Khoa Trang bị", "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  logAudit("inspection", Number(req.params.id), "Hủy hồ sơ", reason);\n  res.json({ ok: true });\n});'
+    'app.delete("/api/inspections/:id", (req, res) => {\n  const old = db.prepare("SELECT * FROM inspections WHERE id=?").get(req.params.id);\n  if (!old) return res.status(404).json({ error: "Không tìm thấy hồ sơ kiểm định." });\n  const reason = String(req.body?.reason || "Hủy hồ sơ nhập nhầm").trim();\n  db.prepare("UPDATE inspections SET cancelled_at=?, cancel_reason=? WHERE id=?").run(nowSql(), reason, req.params.id);\n  writeHistory("inspection", Number(req.params.id), old.organization || "Khoa Trang bị", "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  logAudit("inspection", Number(req.params.id), "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  res.json({ ok: true });\n});'
   );
   source = replaceRequired(
     source,
