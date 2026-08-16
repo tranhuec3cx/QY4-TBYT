@@ -57,7 +57,9 @@ const original = fs.readFileSync(serverPath, "utf8");
 const hardened = hardenServerSource(original);
 
 if (checkOnly) {
-  console.log("[P0 SAFETY] OK - 4 lớp bảo vệ production đã khớp với server.js hiện tại.");
+  // Kiểm tra cú pháp của source sau khi áp dụng đủ 4 lớp bảo vệ, không khởi động server/database.
+  new Function(hardened);
+  console.log("[P0 SAFETY] OK - 4 lớp bảo vệ production đã khớp với server.js hiện tại và source sau vá hợp lệ cú pháp.");
   console.log(`[P0 SAFETY] DEMO_MODE=${demoMode ? "true" : "false"}`);
   process.exit(0);
 }
