@@ -25,27 +25,14 @@ function hardenServerSource(input) {
   let source = String(input || "");
 
   // ===== P0: AN TOÀN DỮ LIỆU =====
-  source = replaceOnce(
-    source,
-    "P0 auto demo refresh",
-    "\nrefreshDemoTodayData();\n",
-    "\nif (process.env.DEMO_MODE === \"true\") refreshDemoTodayData();\n"
-  );
-
-  source = replaceOnce(
-    source,
-    "P0 reset-seed guard",
-    'app.post("/api/reset-seed", (req, res) => {',
-    'app.post("/api/reset-seed", (req, res) => {\n  if (process.env.DEMO_MODE !== "true") return res.status(404).json({ error: "Chức năng reset dữ liệu đã bị vô hiệu trên bản production." });'
-  );
-
+  source = replaceOnce(source, "P0 auto demo refresh", "\nrefreshDemoTodayData();\n", "\nif (process.env.DEMO_MODE === \"true\") refreshDemoTodayData();\n");
+  source = replaceOnce(source, "P0 reset-seed guard", 'app.post("/api/reset-seed", (req, res) => {', 'app.post("/api/reset-seed", (req, res) => {\n  if (process.env.DEMO_MODE !== "true") return res.status(404).json({ error: "Chức năng reset dữ liệu đã bị vô hiệu trên bản production." });');
   source = replaceOnce(
     source,
     "P0 serial migration",
     '    if (!r.insurance_code && r.serial) {\n      db.prepare("UPDATE devices SET insurance_code=? WHERE id=?").run(r.serial, r.id);\n      db.prepare("UPDATE devices SET serial=\'\' WHERE id=?").run(r.id);\n    }',
     '    // P0 safety: KHÔNG tự chuyển Serial hãng sang mã HIS/BHXH và KHÔNG xóa Serial.\n    // Hai trường được giữ độc lập; dữ liệu cũ chỉ được hiệu chỉnh sau khi đối chiếu có căn cứ.'
   );
-
   source = replaceOnce(
     source,
     "P0 device hard-delete guard",
@@ -60,21 +47,18 @@ function hardenServerSource(input) {
     'app.use(express.static(path.join(__dirname, "public")));',
     'app.get("/api.js", (_req, res) => {\n  const base = fs.readFileSync(path.join(__dirname, "public", "api.js"), "utf8");\n  const p1 = fs.readFileSync(path.join(__dirname, "public", "p1-incident-repair.js"), "utf8");\n  res.type("application/javascript").send(base + "\\n\\n" + p1);\n});\napp.use(express.static(path.join(__dirname, "public")));'
   );
-
   source = replaceOnce(
     source,
     "P1 lock repair device",
     '    const old = db.prepare("SELECT * FROM repairs WHERE id=?").get(req.params.id) || {};',
     '    const old = db.prepare("SELECT * FROM repairs WHERE id=?").get(req.params.id) || {};\n    if (!old.id) return res.status(404).json({ error: "Không tìm thấy phiếu sửa chữa." });\n    if (Number(p.device_id) !== Number(old.device_id)) {\n      return res.status(409).json({ error: "Không được đổi thiết bị của phiếu sửa chữa đã tạo. Hãy hủy phiếu nhập nhầm và tạo phiếu mới để bảo toàn lịch sử." });\n    }'
   );
-
   source = replaceOnce(
     source,
     "P1 lock linked incident device",
     '    const old = db.prepare("SELECT * FROM incidents WHERE id=?").get(req.params.id);\n    if (!old) return res.status(404).json({ error: "Không tìm thấy sự cố." });',
     '    const old = db.prepare("SELECT * FROM incidents WHERE id=?").get(req.params.id);\n    if (!old) return res.status(404).json({ error: "Không tìm thấy sự cố." });\n    const linkedRepairForIncident = db.prepare("SELECT id FROM repairs WHERE incident_id=? ORDER BY id DESC LIMIT 1").get(old.id);\n    if (linkedRepairForIncident && Number(p.device_id) !== Number(old.device_id)) {\n      return res.status(409).json({ error: "Sự cố đã liên kết phiếu sửa chữa nên không được đổi thiết bị." });\n    }'
   );
-
   source = replaceOnce(
     source,
     "P1 cancel repair synchronization",
@@ -87,27 +71,28 @@ function hardenServerSource(input) {
     source,
     "P2 attach security middleware",
     'app.use(express.json({ limit: "10mb" }));',
-    'app.use(express.json({ limit: "10mb" }));\nconst p2Security = require("./p2-security").attach({\n  app, express, Database, dbPath,\n  publicDir: path.join(__dirname, "public"),\n  uploadsDir, qrUploadsDir\n});\nrequire("./p2-scope-guard").attach({\n  app, Database, dbPath,\n  getUser: p2Security.getUser,\n  isTech: p2Security.isTech\n});'
+    'app.use(express.json({ limit: "10mb" }));\n// Với multipart, lớp auth chạy trước multer. Client gửi thêm device_id trong query;\n// lớp này chỉ dùng query để kiểm tra sơ bộ, còn route sẽ kiểm tra lại body SAU multer.\napp.use("/api/incidents", (req, _res, next) => {\n  if (/^multipart\\/form-data/i.test(String(req.headers["content-type"] || "")) && req.query?.device_id) {\n    req.body = { ...(req.body || {}), device_id: String(req.query.device_id) };\n  }\n  next();\n});\nconst p2Security = require("./p2-security").attach({\n  app, express, Database, dbPath,\n  publicDir: path.join(__dirname, "public"),\n  uploadsDir, qrUploadsDir\n});\nrequire("./p2-scope-guard").attach({\n  app, Database, dbPath,\n  getUser: p2Security.getUser,\n  isTech: p2Security.isTech\n});'
   );
+  source = replaceOnce(source, "P2 remove public uploads", 'app.use("/uploads", express.static(path.join(__dirname, "uploads")));', '// P2: uploads/documents và uploads/qr được phục vụ qua p2-security với kiểm tra phiên/quyền.');
+  source = replaceOnce(source, "P2 initialize auth after db schema", 'initDb();', 'initDb();\np2Security.initialize();');
 
+  // Sau multer phải kiểm tra lại device_id thật trong multipart; không tin query sơ bộ.
   source = replaceOnce(
     source,
-    "P2 remove public uploads",
-    'app.use("/uploads", express.static(path.join(__dirname, "uploads")));',
-    '// P2: uploads/documents và uploads/qr được phục vụ qua p2-security với kiểm tra phiên/quyền.'
+    "P2 department incident POST body scope",
+    'app.post("/api/incidents", uploadIncidentMedia.array("media", 6), (req, res) => {',
+    'app.post("/api/incidents", uploadIncidentMedia.array("media", 6), (req, res, next) => {\n  if (req.qy4User && !p2Security.isTech(req.qy4User)) {\n    const deviceScope = db.prepare("SELECT department_code FROM devices WHERE id=?").get(Number(req.body?.device_id || 0));\n    if (!deviceScope || deviceScope.department_code !== req.qy4User.department_code) {\n      return res.status(403).json({ error: "Thiết bị không thuộc khoa được cấp cho tài khoản này." });\n    }\n  }\n  next();\n}, (req, res) => {'
   );
-
   source = replaceOnce(
     source,
-    "P2 initialize auth after db schema",
-    'initDb();',
-    'initDb();\np2Security.initialize();'
+    "P2 department incident PUT body scope",
+    'app.put("/api/incidents/:id", uploadIncidentMedia.array("media", 6), (req, res) => {',
+    'app.put("/api/incidents/:id", uploadIncidentMedia.array("media", 6), (req, res, next) => {\n  if (req.qy4User && !p2Security.isTech(req.qy4User)) {\n    const oldScope = db.prepare("SELECT dv.department_code FROM incidents i JOIN devices dv ON dv.id=i.device_id WHERE i.id=?").get(Number(req.params.id));\n    const newScope = db.prepare("SELECT department_code FROM devices WHERE id=?").get(Number(req.body?.device_id || 0));\n    if (!oldScope || oldScope.department_code !== req.qy4User.department_code || !newScope || newScope.department_code !== req.qy4User.department_code) {\n      return res.status(403).json({ error: "Sự cố hoặc thiết bị không thuộc khoa được cấp cho tài khoản này." });\n    }\n  }\n  next();\n}, (req, res) => {'
   );
 
   source = replaceOnce(source, "P2 demo inspection seed", '  if (inspectionCount === 0) {', '  if (process.env.DEMO_MODE === "true" && inspectionCount === 0) {');
   source = replaceOnce(source, "P2 demo quality seed", '  if (qualityCount === 0) {', '  if (process.env.DEMO_MODE === "true" && qualityCount === 0) {');
   source = replaceOnce(source, "P2 demo usage seed", '  if (usageCount === 0) {', '  if (process.env.DEMO_MODE === "true" && usageCount === 0) {');
-
   source = replaceOnce(
     source,
     "P2 strict serial payload",
@@ -130,7 +115,7 @@ if (checkOnly) {
   new Function(fs.readFileSync(p2ScopePath, "utf8"));
   new Function(fs.readFileSync(p2ClientPath, "utf8"));
   console.log("[SAFETY] OK - P0 + P1 + P2 đã khớp server.js và hợp lệ cú pháp.");
-  console.log("[SAFETY] P2: đăng nhập phiên, phân quyền vai trò/khoa, audit đúng tài khoản, bảo vệ uploads, khóa hồ sơ chi tiết ngoài khoa và khóa demo legacy.");
+  console.log("[SAFETY] P2: đăng nhập phiên, phân quyền vai trò/khoa, audit, uploads, hồ sơ chi tiết và sự cố multipart đều được khóa theo phạm vi.");
   console.log(`[SAFETY] DEMO_MODE=${demoMode ? "true" : "false"}`);
   process.exit(0);
 }
