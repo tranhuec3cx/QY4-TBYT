@@ -22,12 +22,16 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: P3 dependency audit snapshot
-        run: npm audit --omit=dev || true
-      - name: Inventory SheetJS/XLSX usage
-        run: grep -R -n -E 'XLSX|xlsx\.full|/vendor/' public server.js || true
-      - name: Verify P0-P2 source hardening
+      - name: Reject high/critical production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+      - name: Ensure vulnerable SheetJS package is absent
+        run: test ! -d node_modules/xlsx
+      - name: Inventory legacy XLSX compatibility usage
+        run: grep -R -n -E 'XLSX|xlsx\.full|/vendor/' public server.js p3-start.js || true
+      - name: Verify P0-P3 source hardening
         run: npm run check:safety
+      - name: Verify ExcelJS legacy browser alias
+        run: test -f node_modules/exceljs/dist/xlsx.full.min.js
       - name: Integration test P2 auth and scope
         run: npm run test:p2
       - name: Production startup smoke test
@@ -36,13 +40,15 @@ jobs:
           DEMO_MODE: 'false'
           ADMIN_INITIAL_PASSWORD: 'CI-Only-Strong-Password-5099'
         run: |
-          node safe-start.js > /tmp/qy4-server.log 2>&1 &
+          npm start > /tmp/qy4-server.log 2>&1 &
           PID=$!
           sleep 3
           if ! kill -0 "$PID" 2>/dev/null; then
             cat /tmp/qy4-server.log
             exit 1
           fi
+          curl -fsS http://127.0.0.1:5099/login.html > /tmp/qy4-login.html
+          grep -q "Đăng nhập" /tmp/qy4-login.html
           kill "$PID"
           wait "$PID" 2>/dev/null || true
           cat /tmp/qy4-server.log
