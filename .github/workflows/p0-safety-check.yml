@@ -1,13 +1,14 @@
-name: P0 Safety Check
+name: Safety Check P0-P1
 
 on:
   pull_request:
   push:
     branches:
       - fix/p0-safety
+      - fix/p1-incident-repair
 
 jobs:
-  check-p0:
+  safety-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,5 +17,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Verify P0 source hardening
-        run: npm run check:p0
+      - name: Verify P0-P1 source hardening
+        run: npm run check:safety
