@@ -9,7 +9,9 @@
     "demo": "node safe-start.js --demo",
     "check:p0": "node safe-start.js --check",
     "check:p1": "node safe-start.js --check",
-    "check:safety": "node safe-start.js --check"
+    "check:p2": "node safe-start.js --check",
+    "check:safety": "node safe-start.js --check",
+    "test:p2": "node test-p2-security.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
