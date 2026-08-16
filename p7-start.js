@@ -6,6 +6,8 @@ require('./p7-qr-token');
 require('./p7-qr-security');
 
 const serverPath = path.resolve(__dirname, 'server.js');
+const publicApiPath = path.resolve(__dirname, 'public', 'api.js');
+const p7ClientPath = path.resolve(__dirname, 'public', 'p7-qr-client.js');
 const previousReadFileSync = fs.readFileSync.bind(fs);
 
 function replaceRequired(source, label, before, after) {
@@ -18,6 +20,14 @@ function replaceRequired(source, label, before, after) {
 fs.readFileSync = function qy4P7ReadFileSync(target, ...args) {
   const value = previousReadFileSync(target, ...args);
   const targetPath = typeof target === 'string' ? path.resolve(target) : '';
+
+  // safe-start đang phục vụ /api.js bằng cách đọc file này tại runtime.
+  // Nối lớp P7 ở cuối để không phải sửa hàng loạt trang HTML/call-site QR legacy.
+  if (targetPath === publicApiPath && typeof value === 'string') {
+    const client = previousReadFileSync(p7ClientPath, 'utf8');
+    return `${value}\n\n;${client}\n`;
+  }
+
   if (targetPath !== serverPath || typeof value !== 'string') return value;
 
   let source = value;
