@@ -6,12 +6,17 @@ const reportSource = fs.readFileSync('public/reports.js', 'utf8');
 const fixSource = fs.readFileSync('public/reports-p3-fix.js', 'utf8');
 const maintenanceSource = fs.readFileSync('public/inspection.js', 'utf8');
 const inspectionsSource = fs.readFileSync('public/inspections.js', 'utf8');
+const devicesSource = fs.readFileSync('public/devices.js', 'utf8');
 
 // Parse-only checks for the browser scripts touched in P3.
 new Function(reportSource);
 new Function(fixSource);
 new Function(maintenanceSource);
 new Function(inspectionsSource);
+new Function(devicesSource);
+assert.ok(!devicesSource.includes('extractSerialFromHisCode'), 'Màn hình thiết bị không được còn hàm suy Serial từ mã HIS/BHXH.');
+assert.ok(!devicesSource.includes('autoFillSerialFromHis'), 'Màn hình thiết bị không được tự điền Serial từ mã HIS/BHXH.');
+assert.ok(!devicesSource.includes('serialInput").value.trim() ||'), 'Payload thiết bị phải giữ Serial hãng độc lập, không fallback sang mã khác.');
 
 const controls = {
   deptFilter: { value: 'C2' },
@@ -140,4 +145,4 @@ run(`CURRENT_COLUMNS=['A']; CURRENT=[[1]]; CURRENT_TITLE='Báo cáo thử'; expo
 assert.strictEqual(xlsxCalls.length, 1, 'Xuất Excel báo cáo đang xem phải gọi XLSX.writeFile');
 assert.ok(xlsxCalls[0].endsWith('_2026-08-17.xlsx'));
 
-console.log('[P3 REPORT] PASS - lọc khoa/nhóm, trạng thái, ngày tiếp nhận, hạn gần nhất, căn cột và xuất Excel đã đúng logic.');
+console.log('[P3 REPORT] PASS - Serial/BHXH độc lập; lọc khoa/nhóm, trạng thái, ngày tiếp nhận, hạn gần nhất, căn cột và xuất Excel đúng logic.');
