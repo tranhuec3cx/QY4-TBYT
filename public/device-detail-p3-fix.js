@@ -66,9 +66,32 @@
     return `<a href="${esc(x.file_path)}" target="_blank" rel="noopener">${esc(name)}</a>`;
   };
 
+  function p4EscapeFields(record, fields) {
+    const out = { ...(record || {}) };
+    fields.forEach(k => { out[k] = esc(out[k] ?? ""); });
+    return out;
+  }
+
   const p3OriginalRenderAll = renderAll;
-  renderAll = function p3RenderAll() {
-    p3OriginalRenderAll();
+  renderAll = function p4RenderAllSafe() {
+    // Một số bảng legacy trong device-detail.js chèn thẳng chuỗi vào innerHTML.
+    // Tạm dùng bản sao đã escape trong lúc render; sau đó trả DEVICE về dữ liệu gốc
+    // để các form cập nhật vẫn nhận đúng giá trị chưa encode.
+    const rawDevice = DEVICE;
+    const safeDevice = {
+      ...rawDevice,
+      status: esc(rawDevice?.status || ""),
+      accessories: (rawDevice?.accessories || []).map(x => p4EscapeFields(x, ["name","code","maker_country","serial","note"])),
+      operation_logs: (rawDevice?.operation_logs || []).map(x => p4EscapeFields(x, ["log_datetime","user_name","department_code","usage_count","status_before","status_after","note"])),
+      documents: (rawDevice?.documents || []).map(x => p4EscapeFields(x, ["name","type","updated_by","note"]))
+    };
+    DEVICE = safeDevice;
+    try {
+      p3OriginalRenderAll();
+    } finally {
+      DEVICE = rawDevice;
+    }
+
     document.querySelectorAll('#maintRows button[onclick^="deleteMaint"]').forEach(btn => {
       btn.textContent = "Hủy";
       btn.title = "Hủy bản ghi nhưng vẫn giữ lịch sử";
