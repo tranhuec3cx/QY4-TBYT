@@ -24,7 +24,8 @@ const { attach: attachScopeGuard } = require('./p2-scope-guard');
   const setup = new Database(dbPath);
   setup.exec(`
     CREATE TABLE users (id INTEGER PRIMARY KEY AUTOINCREMENT, full_name TEXT NOT NULL, username TEXT NOT NULL UNIQUE, role TEXT NOT NULL, department_code TEXT, status TEXT NOT NULL, phone TEXT);
-    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, name TEXT);
+    CREATE TABLE departments (code TEXT PRIMARY KEY, name TEXT);
+    CREATE TABLE devices (id INTEGER PRIMARY KEY, department_code TEXT, device_code TEXT, name TEXT, location TEXT, status TEXT, model TEXT);
     CREATE TABLE incidents (id INTEGER PRIMARY KEY AUTOINCREMENT, device_id INTEGER, status TEXT);
     CREATE TABLE documents (id INTEGER PRIMARY KEY AUTOINCREMENT, device_id INTEGER, stored_name TEXT, file_path TEXT);
     CREATE TABLE maintenances (id INTEGER PRIMARY KEY AUTOINCREMENT, device_id INTEGER, stored_name TEXT, file_path TEXT);
@@ -32,8 +33,10 @@ const { attach: attachScopeGuard } = require('./p2-scope-guard');
   `);
   setup.prepare('INSERT INTO users(full_name,username,role,department_code,status,phone) VALUES (?,?,?,?,?,?)').run('Admin QY4','admin','Quản trị viên','C10','Hoạt động','');
   setup.prepare('INSERT INTO users(full_name,username,role,department_code,status,phone) VALUES (?,?,?,?,?,?)').run('Khoa A10','a10user','Người dùng khoa','A10','Hoạt động','');
-  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(1,'A10','Máy A10');
-  setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(2,'C7','Máy C7');
+  setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('A10','Khoa A10');
+setup.prepare('INSERT INTO departments(code,name) VALUES (?,?)').run('C7','Khoa C7');
+setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(1,'A10','A10.DT.0001','Máy A10','Buồng 1','Đang hoạt động','M1');
+setup.prepare('INSERT INTO devices(id,department_code,device_code,name,location,status,model) VALUES (?,?,?,?,?,?,?)').run(2,'C7','C7.XQ.0001','Máy C7','Phòng XQ','Đang hoạt động','M2');
   setup.prepare('INSERT INTO incidents(device_id,status) VALUES (?,?)').run(1,'Mới ghi nhận');
   setup.prepare('INSERT INTO incidents(device_id,status) VALUES (?,?)').run(2,'Mới ghi nhận');
   setup.prepare('INSERT INTO documents(device_id,stored_name,file_path) VALUES (?,?,?)').run(1,'doc-a10.txt','/uploads/documents/doc-a10.txt');
@@ -81,8 +84,21 @@ const { attach: attachScopeGuard } = require('./p2-scope-guard');
     assert.equal(r.status, 302, 'Trang nội bộ phải yêu cầu đăng nhập');
     assert.ok(String(r.headers.get('location')).startsWith('/login.html'));
 
+    // P5 QR public surface: payload đầy đủ /api/qr/device/* phải cần đăng nhập.
     r = await req('/api/qr/device/1');
-    assert.equal(r.status, 200, 'QR public phải truy cập được không cần phiên');
+    assert.equal(r.status, 401, 'Payload QR đầy đủ không được public khi chưa đăng nhập');
+
+    r = await req('/api/public/device/1');
+    assert.equal(r.status, 200, 'QR public được đọc payload tối thiểu theo ID');
+    let publicDevice = await json(r);
+    assert.equal(publicDevice.device_code, 'A10.DT.0001');
+    assert.ok(!Object.prototype.hasOwnProperty.call(publicDevice, 'serial'), 'QR public không được lộ Serial');
+    assert.ok(!Object.prototype.hasOwnProperty.call(publicDevice, 'cost'), 'QR public không được lộ nguyên giá');
+
+    r = await req('/api/public/device-code/A10.DT.0001');
+    assert.equal(r.status, 200, 'QR public được tra theo mã thiết bị ổn định');
+    publicDevice = await json(r);
+    assert.equal(publicDevice.id, 1);
 
     r = await req('/api/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:'admin',password:'sai'}) });
     assert.equal(r.status, 401, 'Mật khẩu sai phải bị từ chối');
