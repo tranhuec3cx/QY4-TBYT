@@ -42,8 +42,66 @@
   function isAdmin(user) { return /quản trị/i.test(String(user?.role || "")); }
   function isTech(user) { return isAdmin(user) || /kỹ|ky|trang bị|ttbyt/i.test(String(user?.role || "")); }
 
+  function hideElement(el) {
+    if (!el) return;
+    el.hidden = true;
+    el.style.display = "none";
+    el.setAttribute("aria-hidden", "true");
+  }
+
+  function enforceDepartmentReadOnlyUi() {
+    if (window.__QY4_CAN_WRITE !== false) return;
+    const path = window.location.pathname === "/" ? "/index.html" : window.location.pathname;
+
+    if (path === "/index.html") {
+      hideElement(document.getElementById("formCard"));
+      hideElement(document.getElementById("exportExcelBtn"));
+      document.querySelectorAll('.topbar .page-actions button[onclick*="formCard"], #deviceRows button[onclick^="editDevice"], #deviceRows button[onclick^="deleteDevice"]').forEach(hideElement);
+    }
+
+    if (path === "/device-detail.html") {
+      [
+        "editGeneralBtn","saveGeneralBtn","cancelGeneralBtn",
+        "toggleAccessoryBtn","toggleRepairBtn","toggleMaintBtn","toggleOpBtn","toggleDocBtn",
+        "accessoryFormWrap","repairFormWrap","maintFormWrap","opFormWrap","docFormWrap"
+      ].forEach(id => hideElement(document.getElementById(id)));
+      document.querySelectorAll(
+        '#accessoryRows button[onclick^="edit"], #accessoryRows button[onclick^="delete"], ' +
+        '#maintRows button[onclick^="edit"], #maintRows button[onclick^="delete"], ' +
+        '#inspectionRows button[onclick^="edit"], #inspectionRows button[onclick^="delete"], ' +
+        '#opRows button[onclick^="edit"], #opRows button[onclick^="delete"], ' +
+        '#docRows button[onclick^="edit"], #docRows button[onclick^="delete"], ' +
+        'a.btn[href="/inspections.html"]'
+      ).forEach(hideElement);
+    }
+
+    if (path === "/tickets.html") {
+      // Tài khoản khoa được báo/cập nhật sự cố của khoa mình nhưng không được chuyển sửa chữa.
+      document.querySelectorAll('#rows button[onclick^="transferToRepair"], #rows button[onclick^="openLinkedRepair"], #exportIncidentExcelBtn').forEach(hideElement);
+    }
+  }
+
+  function installDepartmentReadOnlyObserver() {
+    if (window.__QY4_CAN_WRITE !== false || window.__QY4_ROLE_OBSERVER) return;
+    const path = window.location.pathname === "/" ? "/index.html" : window.location.pathname;
+    if (!["/index.html","/device-detail.html","/tickets.html"].includes(path)) return;
+    let scheduled = false;
+    const observer = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      queueMicrotask(() => {
+        scheduled = false;
+        enforceDepartmentReadOnlyUi();
+      });
+    });
+    observer.observe(document.body, { childList:true, subtree:true });
+    window.__QY4_ROLE_OBSERVER = observer;
+  }
+
   function applyUserUi(user) {
     window.__QY4_CURRENT_USER = user;
+    window.__QY4_CAN_WRITE = isTech(user);
+    document.documentElement.dataset.qy4Role = isTech(user) ? "tech" : "department-user";
     document.querySelectorAll(".user-box").forEach(box => {
       box.innerHTML = `<b>${esc(user.full_name || user.username)}</b><span style="margin-left:6px">· ${esc(user.role || "")}</span>`;
     });
@@ -60,7 +118,11 @@
         const p = new URL(a.href, window.location.origin).pathname;
         if (!allowed.has(p)) a.remove();
       });
+      enforceDepartmentReadOnlyUi();
+      installDepartmentReadOnlyObserver();
     }
+
+    window.dispatchEvent(new CustomEvent("qy4:user-ready", { detail: { user, canWrite: isTech(user) } }));
 
     if (!document.getElementById("p2LogoutBtn")) {
       const top = document.querySelector(".topbar .page-actions") || document.querySelector(".topbar");
@@ -87,8 +149,6 @@
       clone.dataset.p2Clean = "1";
       old.replaceWith(clone);
     }
-    // P3: Serial hãng và mã HIS/BHXH là hai trường độc lập. Vô hiệu luôn fallback legacy
-    // trong saveDevice(), không chỉ gỡ listener tự điền của ô Mã bảo hiểm.
     try { window.extractSerialFromHisCode = () => ""; } catch {}
     const serial = document.getElementById("serialInput");
     if (serial) serial.placeholder = serial.placeholder || "Nhập Serial Number của hãng";
@@ -124,7 +184,7 @@
       applyUserUi(user);
       disableLegacyInsuranceSerialAutofill();
     } catch (e) {
-      console.warn("P2/P3 auth client:", e);
+      console.warn("P2/P3/P4 auth client:", e);
     }
   }
 
