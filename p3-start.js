@@ -67,9 +67,15 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
   // danh sách/báo cáo hoạt động, không xóa vật lý bản ghi khỏi lý lịch thiết bị.
   source = replaceRequired(
     source,
-    'maintenance inspection lifecycle columns',
+    'maintenance lifecycle columns',
     '  const deptCount = db.prepare("SELECT COUNT(*) AS c FROM departments").get().c;',
-    '  const maintenanceColsP3 = db.prepare("PRAGMA table_info(maintenances)").all().map(x => x.name);\n  if (!maintenanceColsP3.includes("cancelled_at")) db.exec("ALTER TABLE maintenances ADD COLUMN cancelled_at TEXT");\n  if (!maintenanceColsP3.includes("cancel_reason")) db.exec("ALTER TABLE maintenances ADD COLUMN cancel_reason TEXT");\n  const inspectionColsP3 = db.prepare("PRAGMA table_info(inspections)").all().map(x => x.name);\n  if (!inspectionColsP3.includes("cancelled_at")) db.exec("ALTER TABLE inspections ADD COLUMN cancelled_at TEXT");\n  if (!inspectionColsP3.includes("cancel_reason")) db.exec("ALTER TABLE inspections ADD COLUMN cancel_reason TEXT");\n\n  const deptCount = db.prepare("SELECT COUNT(*) AS c FROM departments").get().c;'
+    '  const maintenanceColsP3 = db.prepare("PRAGMA table_info(maintenances)").all().map(x => x.name);\n  if (!maintenanceColsP3.includes("cancelled_at")) db.exec("ALTER TABLE maintenances ADD COLUMN cancelled_at TEXT");\n  if (!maintenanceColsP3.includes("cancel_reason")) db.exec("ALTER TABLE maintenances ADD COLUMN cancel_reason TEXT");\n\n  const deptCount = db.prepare("SELECT COUNT(*) AS c FROM departments").get().c;'
+  );
+  source = replaceRequired(
+    source,
+    'inspection lifecycle columns',
+    '\ninitExtendedModules();\n',
+    '\ninitExtendedModules();\nconst inspectionColsP3 = db.prepare("PRAGMA table_info(inspections)").all().map(x => x.name);\nif (!inspectionColsP3.includes("cancelled_at")) db.exec("ALTER TABLE inspections ADD COLUMN cancelled_at TEXT");\nif (!inspectionColsP3.includes("cancel_reason")) db.exec("ALTER TABLE inspections ADD COLUMN cancel_reason TEXT");\n'
   );
   source = replaceRequired(
     source,
