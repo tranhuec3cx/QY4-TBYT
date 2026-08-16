@@ -38,20 +38,20 @@ function renderRows() {
   q("deviceRows").innerHTML = FILTERED.map((d, i) => `
     <tr>
       <td class="col-stt">${i+1}</td>
-      <td class="device-code">${d.device_code}</td>
-      <td class="device-name-cell"><div class="device-name" title="${escapeHtml(d.name || "")}">${d.name || ""}</div></td>
+      <td class="device-code">${escapeHtml(d.device_code || "")}</td>
+      <td class="device-name-cell"><div class="device-name" title="${escapeHtml(d.name || "")}">${escapeHtml(d.name || "")}</div></td>
       <td class="department-cell code-only">${escapeHtml(d.department_code || "")}</td>
-      <td>${d.model || ""}</td>
-      <td>${d.serial || ""}</td>
-      <td>${d.year_in_use || ""}</td>
-      <td>${d.location || ""}</td>
-      <td><span class="tag ${statusTagClass(d.status)}">${d.status || ""}</span></td>
+      <td>${escapeHtml(d.model || "")}</td>
+      <td>${escapeHtml(d.serial || "")}</td>
+      <td>${escapeHtml(d.year_in_use || "")}</td>
+      <td>${escapeHtml(d.location || "")}</td>
+      <td><span class="tag ${statusTagClass(d.status)}">${escapeHtml(d.status || "")}</span></td>
       <td>
         <div class="table-actions device-row-actions">
-          <a class="btn btn-sm" href="/device-detail.html?id=${d.id}">Xem hồ sơ</a>
-          <button class="btn btn-sm" onclick="showDeviceQrModal(byId(${d.id}))">QR</button>
-          <button class="btn btn-sm" onclick="editDevice(${d.id})">Cập nhật</button>
-          <button class="btn btn-sm danger-light" onclick="deleteDevice(${d.id})">Xóa</button>
+          <a class="btn btn-sm" href="/device-detail.html?id=${Number(d.id)}">Xem hồ sơ</a>
+          <button class="btn btn-sm" onclick="showDeviceQrModal(byId(${Number(d.id)}))">QR</button>
+          <button class="btn btn-sm" onclick="editDevice(${Number(d.id)})">Cập nhật</button>
+          <button class="btn btn-sm danger-light" onclick="deleteDevice(${Number(d.id)})">Xóa</button>
         </div>
       </td>
     </tr>
@@ -136,7 +136,7 @@ async function loadData() {
   q("departmentFilter").innerHTML = optDepartmentFilter(META.departments, "Tất cả khoa/phòng");
   q("groupFilter").innerHTML = opt(META.groups, "Tất cả nhóm");
   const years = [...new Set(DEVICES.map(d => d.year_in_use))].sort((a,b)=>b-a);
-  q("yearFilter").innerHTML = '<option value="ALL">Tất cả năm</option>' + years.map(y => `<option value="${y}">${y}</option>`).join("");
+  q("yearFilter").innerHTML = '<option value="ALL">Tất cả năm</option>' + years.map(y => `<option value="${escapeHtml(y)}">${escapeHtml(y)}</option>`).join("");
   q("statusFilter").innerHTML = '<option value="ALL">Tất cả trạng thái</option><option>Đang hoạt động</option><option>Chờ sửa chữa</option><option>Ngừng hoạt động</option>';
   q("qualityFilter").innerHTML = '<option value="ALL">Tất cả cấp chất lượng</option><option value="1">Cấp 1</option><option value="2">Cấp 2</option><option value="3">Cấp 3</option><option value="4">Cấp 4</option><option value="5">Cấp 5</option>';
   const fundings = [...new Set(DEVICES.map(d => (d.funding || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b, "vi"));

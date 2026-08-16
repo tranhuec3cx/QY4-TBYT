@@ -1,0 +1,39 @@
+name: P4 UI Integrity
+
+on:
+  pull_request:
+    paths:
+      - 'public/**'
+      - 'p2-scope-guard.js'
+      - 'test-p4-ui.js'
+      - 'test-p4-role-ui.js'
+      - 'test-p4-dashboard.js'
+      - 'test-p4-dept-scope.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/p4-ui-integrity.yml'
+  push:
+    branches:
+      - fix/p4-ui-integrity
+
+jobs:
+  ui-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: P4 UI integrity test
+        run: npm run test:p4:ui
+      - name: P4 role-aware UI test
+        run: npm run test:p4:role
+      - name: P4 dashboard role test
+        run: npm run test:p4:dashboard
+      - name: P4 department data scope test
+        run: npm run test:p4:scope
