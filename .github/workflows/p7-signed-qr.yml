@@ -11,6 +11,7 @@ on:
       - 'p7-qr-security.js'
       - 'public/p7-qr-client.js'
       - 'public/inspect.js'
+      - 'public/qr-check.js'
       - 'test-p7-signed-qr.js'
       - 'package.json'
       - '.env.example'
@@ -39,6 +40,7 @@ jobs:
           node -c p7-qr-security.js
           node -c public/p7-qr-client.js
           node -c public/inspect.js
+          node -c public/qr-check.js
           node -c test-p7-signed-qr.js
       - name: Full source safety check
         run: npm run check:safety
