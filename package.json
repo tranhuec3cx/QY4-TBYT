@@ -13,7 +13,8 @@
     "check:p3": "node p3-start.js --check",
     "check:safety": "node p3-start.js --check",
     "test:p2": "node test-p2-security.js",
-    "test:p3:excel": "node test-p3-excel.js"
+    "test:p3:excel": "node test-p3-excel.js",
+    "test:p3:reports": "node test-p3-reports.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
