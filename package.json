@@ -16,7 +16,8 @@
     "test:p3:excel": "node test-p3-excel.js",
     "test:p3:reports": "node test-p3-reports.js",
     "test:p4:ui": "node test-p4-ui.js",
-    "test:p4:role": "node test-p4-role-ui.js"
+    "test:p4:role": "node test-p4-role-ui.js",
+    "test:p4:dashboard": "node test-p4-dashboard.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
