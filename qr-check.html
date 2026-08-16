@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kiểm tra thiết bị QR - QY4</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="qr-page">
+  <main class="qr-mobile-wrap">
+    <header class="qr-mobile-head">
+      <div class="qr-logo-dot">QY4</div>
+      <div>
+        <h1>Kiểm tra thiết bị</h1>
+        <p>Quét mã QR để kiểm tra nhanh thiết bị</p>
+      </div>
+    </header>
+
+    <section class="qr-device-card" id="deviceCard">
+      <div class="center-empty">Đang tải thông tin thiết bị...</div>
+    </section>
+
+    <section class="qr-form-card">
+      <div class="qr-section-title">Kiểm tra nhanh</div>
+      <form id="checkForm">
+        <label class="field"><span class="field-label">Người kiểm tra *</span><input id="inspectorInput" required placeholder="Nhập họ tên" /></label>
+        <label class="field"><span class="field-label">Số điện thoại</span><input id="phoneInput" inputmode="tel" placeholder="Số điện thoại liên hệ" /></label>
+        <div class="field"><span class="field-label">Tình trạng kiểm tra *</span>
+          <div class="qr-condition-grid">
+            <label><input type="radio" name="condition" value="Bình thường" checked /> <span>Bình thường</span></label>
+            <label><input type="radio" name="condition" value="Có vấn đề" /> <span>Có vấn đề</span></label>
+          </div>
+        </div>
+        <div id="issueFields" class="qr-issue-fields"><label class="field"><span class="field-label">Mô tả vấn đề *</span><textarea id="checkDescription" placeholder="Mô tả vấn đề phát hiện được..."></textarea></label></div>
+        <label class="field"><span class="field-label">Ảnh/Video</span><input id="checkFile" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" /><small>Ảnh tối đa 5 file, mỗi ảnh 5MB; video tối đa 1 file, 30MB.</small></label>
+        <label class="field"><span class="field-label">Ghi chú thêm</span><textarea id="checkNote" placeholder="Ghi chú khác nếu có..."></textarea></label>
+        <button class="btn btn-primary qr-full-btn" type="submit">Xác nhận</button>
+      </form>
+    </section>
+
+    <div class="qr-bottom-links"><a href="/dashboard.html">← Về trang chủ</a></div>
+  </main>
+  <script src="/api.js"></script>
+  <script src="/qr-check.js"></script>
+</body>
+</html>

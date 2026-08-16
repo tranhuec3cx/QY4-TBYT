@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tổng quan - Quản lý TTBYT BVQY4</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="user-box">Người dùng: Quản trị viên</div>
+      </div>
+
+      <section class="dashboard-stats dashboard-stats-4">
+        <div class="card stat-card simple-card"><h3>Tổng thiết bị</h3><div id="dbTotal" class="value">0</div><p class="small">Toàn viện</p></div>
+        <div class="card stat-card simple-card"><h3>Đang hoạt động</h3><div id="dbActive" class="value">0</div><p class="small">Sẵn sàng phục vụ</p></div>
+        <div class="card stat-card simple-card"><h3>Phiếu sửa chữa mở</h3><div id="dbWaitingRepair" class="value">0</div><p class="small">Cần theo dõi</p></div>
+        <div class="card stat-card simple-card"><h3>Ngừng/Thanh lý</h3><div id="dbStopped" class="value">0</div><p class="small">Không khai thác</p></div>
+      </section>
+
+      <section class="dashboard-stats dashboard-stats-4">
+        <div class="card stat-card simple-card"><h3>Sự cố chưa đóng</h3><div id="dbOpenIncidents" class="value">0</div></div>
+        <div class="card stat-card simple-card"><h3>Đến hạn bảo dưỡng</h3><div id="dbDueMaint" class="value">0</div></div>
+        <div class="card stat-card simple-card"><h3>Đến hạn kiểm định</h3><div id="dbDueInspection" class="value">0</div></div>
+        <div class="card stat-card simple-card"><h3>Chi phí sửa chữa</h3><div id="dbRepairCost" class="value value-money">0 đ</div></div>
+      </section>
+
+      <section class="card dashboard-qr-card">
+        <h3 class="section-title">Kiểm tra hôm nay</h3>
+        <div class="mini-kpi-grid mini-kpi-grid-3">
+          <div><span>Đã kiểm tra</span><b id="dbQrTotal">0</b></div>
+          <div><span>Bình thường</span><b id="dbQrNormal">0</b></div>
+          <div><span>Có vấn đề</span><b id="dbQrIssue">0</b></div>
+        </div>
+      </section>
+
+      <section class="grid-2 dashboard-grid">
+        <div class="card dashboard-upcoming-card">
+          <h3 class="section-title">Cảnh báo ưu tiên</h3>
+          <div id="alertsList" class="alerts-list"></div>
+        </div>
+        <div class="card dashboard-upcoming-card">
+          <h3 class="section-title">Cảnh báo đến hạn</h3>
+          <div class="dashboard-upcoming-grid">
+            <div class="due-list-block"><h4>Bảo dưỡng sắp đến hạn</h4><ul id="dueMaints" class="task-list"></ul></div>
+            <div class="due-list-block"><h4>Kiểm định sắp đến hạn</h4><ul id="dueInspections" class="task-list"></ul></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid-2 dashboard-grid">
+        <div class="card"><h3 class="section-title">Thiết bị theo khoa/phòng</h3><div id="deptChart" class="metric-list"></div></div>
+        <div class="card"><h3 class="section-title">Tình trạng thiết bị</h3><div id="statusChart" class="metric-list"></div></div>
+      </section>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/dashboard.js"></script>
+</body>
+</html>

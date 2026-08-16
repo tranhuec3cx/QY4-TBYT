@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sự cố thiết bị</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div><h1 id="pageTitle" class="page-title"></h1><p id="pageSubtitle" class="page-subtitle"></p></div>
+        <div class="page-actions"><button class="btn btn-primary" id="newIncidentBtn">+ Báo sự cố</button><div class="user-box">Người dùng: Quản trị viên</div></div>
+      </div>
+
+      <section class="ticket-stats dashboard-stats-4" id="incidentStats">
+        <div class="card stat-card simple-card"><h3>Tổng sự cố</h3><div id="stTotalIncidents" class="value">0</div></div>
+        <div class="card stat-card simple-card"><h3>Mới báo</h3><div id="stNewIncidents" class="value">0</div></div>
+        <div class="card stat-card simple-card"><h3>Đã chuyển sửa chữa</h3><div id="stTransferIncidents" class="value">0</div></div>
+      </section>
+
+      <section class="card compact-card">
+        <div class="filters incident-filter-grid">
+          <label class="field"><span class="field-label">Từ ngày</span><input id="fromDate" type="date" /></label>
+          <label class="field"><span class="field-label">Đến ngày</span><input id="toDate" type="date" /></label>
+          <label class="field field-wide"><span class="field-label">Tìm kiếm</span><input id="searchInput" placeholder="Thiết bị / nội dung sự cố / người báo" /></label>
+          <label class="field"><span class="field-label">Thiết bị</span><select id="deviceFilter"><option value="ALL">Tất cả thiết bị</option></select></label>
+          <label class="field"><span class="field-label">Trạng thái</span><select id="statusFilter"><option value="ALL">Tất cả trạng thái</option><option>Mới báo</option><option>Đã chuyển sửa chữa</option></select></label>
+          <div class="filter-actions"><button class="btn btn-primary" id="filterBtn">Lọc</button><button class="btn" id="clearFilterBtn">Xóa lọc</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="table-card-header"><h3 id="countLabel">0 sự cố</h3></div>
+        <div class="table-wrap scroll-area">
+          <table class="incident-table-v2">
+            <thead><tr><th>STT</th><th>Thời gian</th><th>Mã thiết bị</th><th>Tên thiết bị</th><th>Vị trí</th><th>Mô tả sự cố</th><th>Người báo</th><th>Trạng thái</th><th>Ảnh/Video</th><th>Thao tác</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="table-footer-actions"><button class="btn btn-primary" id="exportIncidentExcelBtn">Xuất Excel</button></div>
+      </section>
+
+      <section class="card incident-form-card">
+        <div class="table-card-header"><h3 id="incidentFormTitle">Phiếu báo sự cố</h3><div class="small">Khoa sử dụng chỉ báo hỏng. Khoa Trang bị chuyển sang phiếu sửa chữa khi cần xử lý kỹ thuật.</div></div>
+        <form id="incidentForm" enctype="multipart/form-data">
+          <input type="hidden" id="incidentId" />
+          <div class="form-grid incident-form-grid">
+            <input type="hidden" id="deviceId" />
+            <label class="field span-3"><span class="field-label">Thiết bị</span><input id="deviceSearch" list="deviceOptions" placeholder="Gõ mã / tên thiết bị / Serial Number để chọn" autocomplete="off" required /><datalist id="deviceOptions"></datalist></label>
+            <label class="field"><span class="field-label">Khoa</span><input id="incidentDept" readonly /></label>
+            <label class="field"><span class="field-label">Vị trí</span><input id="incidentLocation" readonly /></label>
+            <label class="field"><span class="field-label">Thời gian báo</span><input id="incidentTime" type="datetime-local" required /></label>
+            <label class="field"><span class="field-label">Người báo</span><input id="reporter" placeholder="Người báo" required /></label>
+            <label class="field"><span class="field-label">Số điện thoại</span><input id="reporterPhone" placeholder="Số điện thoại liên hệ" /></label>
+            <label class="field"><span class="field-label">Trạng thái sự cố</span><select id="status"><option>Mới báo</option></select></label>
+            <label class="field span-3"><span class="field-label">Nội dung sự cố</span><textarea id="description" class="textarea-medium" required></textarea></label>
+            
+            <label class="field span-3"><span class="field-label">File/Hình ảnh đính kèm</span><input id="incidentMedia" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" /><small>Ảnh tối đa 5 file, mỗi ảnh 5MB; video tối đa 1 file, 30MB.</small></label>
+            <label class="field span-3"><span class="field-label">Ghi chú</span><textarea id="note"></textarea></label>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" type="submit" id="saveIncidentBtn">Lưu phiếu</button><button class="btn" type="button" id="resetIncidentBtn">Làm mới form</button></div>
+        </form>
+      </section>
+          <dialog id="mediaDialog" class="wide-dialog media-dialog"><div class="dialog-head"><h2>Ảnh/Video sự cố</h2><button class="btn" onclick="q('mediaDialog').close()">Đóng</button></div><div id="mediaDialogBody" class="media-dialog-body"></div></dialog>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  <script src="/tickets.js"></script>
+</body>
+</html>

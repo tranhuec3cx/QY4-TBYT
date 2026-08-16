@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kiểm tra thiết bị - Bệnh viện Quân y 4</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body class="public-inspect-page">
+  <main class="public-inspect-wrap">
+    <header class="public-inspect-header">
+      <img src="/assets/BVQY4.jpg" alt="Bệnh viện Quân y 4" />
+      <div>
+        <b>BỆNH VIỆN QUÂN Y 4</b>
+        <span>Quản lý trang thiết bị y tế</span>
+      </div>
+    </header>
+
+    <section id="publicDeviceCard" class="public-device-card">
+      <div class="center-empty">Đang tải thông tin thiết bị...</div>
+    </section>
+
+    <section class="public-check-card">
+      <h2>Kiểm tra thiết bị</h2>
+      <p class="public-help">Chọn tình trạng hiện tại của thiết bị. Nếu có vấn đề, hệ thống sẽ tự tạo phiếu sự cố gửi về Khoa Trang bị.</p>
+
+      <form id="publicCheckForm">
+        <label class="field">
+          <span class="field-label">Người ghi nhận *</span>
+          <input id="publicInspector" required placeholder="Nhập họ tên" autocomplete="name" />
+        </label>
+
+        <label class="field">
+          <span class="field-label">Số điện thoại</span>
+          <input id="publicPhone" inputmode="tel" placeholder="Số điện thoại liên hệ" autocomplete="tel" />
+        </label>
+
+        <div class="field">
+          <span class="field-label">Tình trạng kiểm tra *</span>
+          <div class="public-status-choice">
+            <label class="public-choice-ok">
+              <input type="radio" name="publicCondition" value="Bình thường" checked />
+              <span>✓ Bình thường</span>
+            </label>
+            <label class="public-choice-issue">
+              <input type="radio" name="publicCondition" value="Có vấn đề" />
+              <span>⚠ Có vấn đề</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="publicIssueFields" class="public-issue-fields">
+          <label class="field">
+            <span class="field-label">Mô tả sự cố *</span>
+            <textarea id="publicDescription" placeholder="Ví dụ: màn hình báo lỗi, máy không khởi động, phát tiếng kêu lạ..."></textarea>
+          </label>
+
+          <label class="field">
+            <span class="field-label">Ảnh/Video</span>
+            <input id="publicMedia" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" />
+            <small>Ảnh tối đa 5 file, mỗi ảnh 5MB. Video tối đa 1 file, 30MB.</small>
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field-label">Ghi chú</span>
+          <textarea id="publicNote" placeholder="Ghi chú thêm nếu có..."></textarea>
+        </label>
+
+        <button id="publicSubmitBtn" class="btn btn-primary public-submit-btn" type="submit">Gửi kết quả kiểm tra</button>
+      </form>
+    </section>
+
+    <footer class="public-inspect-footer">Trang kiểm tra công khai chỉ hiển thị thông tin cần thiết, không hiển thị hồ sơ nội bộ.</footer>
+  </main>
+
+  <script src="/api.js"></script>
+  <script src="/inspect.js"></script>
+</body>
+</html>

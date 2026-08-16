@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý TTBYT - Bệnh viện Quân y 4</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="user-box">Người dùng: Quản trị viên</div>
+      </div>
+      
+<section class="card">
+  <div class="filters" style="grid-template-columns:1.2fr auto">
+    <input id="searchInput" placeholder="Tìm họ tên / tài khoản / vai trò / khoa phòng" />
+    <button class="btn" id="filterBtn">Lọc</button>
+  </div>
+</section>
+<section class="card">
+  <div class="table-card-header"><h3 id="countLabel">0 người dùng</h3><div class="small">Tài khoản quản trị, kỹ sư TTBYT và người dùng khoa</div></div>
+  <div class="table-wrap scroll-area"><table><thead><tr><th>STT</th><th>Họ tên</th><th>Tài khoản</th><th>Vai trò</th><th>Khoa/Phòng</th><th>Số điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div>
+</section>
+<section class="card">
+  <div class="table-card-header"><h3>Thêm / cập nhật người dùng</h3><div class="small">Khai báo vai trò, khoa/phòng và trạng thái sử dụng</div></div>
+  <form id="userForm">
+    <input type="hidden" id="userId" />
+    <div class="form-grid">
+      <input id="fullName" placeholder="Họ và tên" required />
+      <input id="username" placeholder="Tài khoản đăng nhập" required />
+      <select id="role"><option>Quản trị viên</option><option>Kỹ sư TTBYT</option><option>Người dùng khoa</option></select>
+      <select id="departmentCode"></select>
+      <input id="phone" placeholder="Số điện thoại" />
+      <select id="status"><option>Hoạt động</option><option>Ngừng hoạt động</option></select>
+    </div>
+    <div class="form-actions"><button class="btn btn-primary" type="submit">Lưu người dùng</button><button class="btn" type="button" onclick="resetForm()">Đặt lại form</button></div>
+  </form>
+</section>
+
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/users.js"></script>
+</body>
+</html>

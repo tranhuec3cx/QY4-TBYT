@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Danh mục nhóm thiết bị</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="user-box">Người dùng: Quản trị viên</div>
+      </div>
+      <section class="card">
+        <div class="filters" style="grid-template-columns:1.2fr auto">
+          <input id="searchInput" placeholder="Tìm mã nhóm / tên nhóm thiết bị" />
+          <button class="btn" id="filterBtn">Lọc</button>
+        </div>
+      </section>
+      <section class="card">
+        <div class="table-card-header"><h3 id="countLabel">0 nhóm thiết bị</h3></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm thiết bị</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </section>
+      <section class="card">
+        <div class="table-card-header"><h3>Thêm / cập nhật nhóm thiết bị</h3></div>
+        <form id="form">
+          <input type="hidden" id="originalCode" />
+          <div class="form-grid">
+            <input id="code" placeholder="Mã nhóm, ví dụ: NS" required />
+            <input id="name" class="span-2" placeholder="Tên nhóm thiết bị" required />
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Lưu nhóm thiết bị</button>
+            <button class="btn" type="button" id="resetBtn">Đặt lại form</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/groups.js"></script>
+</body>
+</html>

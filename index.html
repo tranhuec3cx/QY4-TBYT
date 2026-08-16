@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản lý TTBYT</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="page-actions"><button class="btn btn-primary" onclick="document.getElementById('formCard').scrollIntoView({behavior:'smooth'})">+ Thêm thiết bị</button></div>
+      </div>
+      
+<section class="card">
+  <div class="filters device-filter-row">
+    <input id="searchInput" type="text" placeholder="Tìm mã thiết bị / tên thiết bị / Serial Number" />
+    <select id="departmentFilter"></select>
+    <select id="groupFilter"></select>
+    <select id="yearFilter"></select>
+    <select id="statusFilter"></select>
+    <select id="qualityFilter"></select>
+    <select id="fundingFilter"></select>
+    <button class="btn" id="filterBtn">Lọc</button>
+    <button class="btn" id="resetBtn">Đặt lại</button>
+  </div>
+</section>
+
+
+<section class="card technical-card">
+  <div class="table-card-header technical-table-title">
+    <h3><span class="red-title">Tổng thiết bị:</span> <span id="listCount">0 thiết bị</span></h3>
+  </div>
+  <div class="table-wrap scroll-area">
+    <table class="device-table">
+      <thead><tr><th>STT</th><th>Mã thiết bị</th><th>Tên thiết bị</th><th>Khoa</th><th>Model</th><th>Serial Number</th><th>Năm SD</th><th>Vị trí</th><th>Tình trạng</th><th>Thao tác</th></tr></thead>
+      <tbody id="deviceRows"></tbody>
+    </table>
+  </div>
+  <div class="table-footer-actions"><button class="btn btn-primary" id="exportExcelBtn">Xuất Excel</button></div>
+</section>
+
+<section id="formCard" class="card">
+  <div class="table-card-header"><h3>Thêm / cập nhật thiết bị</h3></div>
+  <form id="deviceForm">
+    <input type="hidden" id="deviceId" />
+    <div class="form-grid">
+      <select id="departmentInput" required></select>
+      <select id="groupInput" required></select>
+      <input id="nameInput" placeholder="Tên thiết bị" required />
+      <input id="manufacturerInput" placeholder="Hãng sản xuất" required />
+      <input id="modelInput" placeholder="Model" required />
+      <input id="insuranceInput" placeholder="Số hợp đồng / mã quản lý cũ" />
+      <input id="serialInput" placeholder="Serial Number của hãng (có thể để trống)" />
+      <input id="countryInput" placeholder="Nước sản xuất" required />
+      <input id="yearManufacturedInput" type="number" placeholder="Năm sản xuất" required />
+      <input id="yearUseInput" type="number" placeholder="Năm đưa vào sử dụng" required />
+      <input id="warrantyInput" type="date" title="Thời hạn bảo hành" required />
+      <select id="statusInput" required><option>Đang hoạt động</option><option>Chờ sửa chữa</option><option>Ngừng hoạt động</option></select>
+      <select id="qualityInput" required><option value="1">Cấp 1 - Rất tốt</option><option value="2">Cấp 2 - Tốt</option><option value="3">Cấp 3 - Trung bình</option><option value="4">Cấp 4 - Kém</option><option value="5">Cấp 5 - Rất kém</option></select>
+      <input id="costInput" type="number" placeholder="Nguyên giá" />
+      <input id="fundingInput" placeholder="Nguồn kinh phí" />
+      <input id="locationInput" placeholder="Vị trí lắp đặt" />
+      <textarea id="noteInput" class="span-3" placeholder="Ghi chú"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" type="submit">Lưu thiết bị</button>
+      <button class="btn" type="button" onclick="resetForm()">Đặt lại form</button>
+    </div>
+  </form>
+</section>
+
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  <script src="/devices.js"></script>
+</body>
+</html>

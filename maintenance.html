@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sửa chữa thiết bị</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-primary" id="createRepairBtn">+ Tạo phiếu sửa chữa</button>
+          <div class="user-box">Người dùng: Quản trị viên</div>
+        </div>
+      </div>
+
+      <section class="repair-stats" id="repairStats"></section>
+
+      <section class="card compact-card">
+        <div class="filters repair-filter-grid-v2">
+          <label class="field"><span class="field-label">Từ ngày</span><input id="fromDate" type="date" /></label>
+          <label class="field"><span class="field-label">Đến ngày</span><input id="toDate" type="date" /></label>
+          <label class="field field-wide"><span class="field-label">Tìm kiếm</span><input id="searchInput" placeholder="Mã, tên, model, Serial Number, nguyên nhân, nội dung" /></label>
+          <label class="field"><span class="field-label">Khoa/phòng</span><select id="departmentFilter"><option value="ALL">Tất cả khoa/phòng</option></select></label>
+          <label class="field"><span class="field-label">Nhóm thiết bị</span><select id="groupFilter"><option value="ALL">Tất cả nhóm thiết bị</option></select></label>
+          <label class="field"><span class="field-label">Thiết bị</span><select id="deviceFilter"><option value="ALL">Tất cả thiết bị</option></select></label>
+          <label class="field"><span class="field-label">Trạng thái</span><select id="repairStatusFilter"><option value="ALL">Tất cả trạng thái</option><option>Đang xử lý</option><option>Chờ linh kiện</option><option>Chuyển hãng/Bảo hành</option><option>Đã hoàn thành</option><option>Không sửa được</option></select></label>
+          <label class="field"><span class="field-label">Hình thức</span><select id="methodFilter"><option value="ALL">Tất cả hình thức</option><option>Nội bộ</option><option>Thuê ngoài</option><option>Bảo hành/Hãng</option><option>Khác</option></select></label>
+          <div class="filter-actions"><button class="btn btn-primary" id="filterBtn">Lọc</button><button class="btn" id="clearFilterBtn">Xóa lọc</button></div>
+        </div>
+      </section>
+
+      <section class="card repair-table-card">
+        <div class="table-card-header"><h3 id="countLabel">0 bản ghi</h3></div>
+        <div class="table-wrap scroll-area">
+          <table class="repair-table-v2">
+            <thead>
+              <tr>
+                <th class="col-stt">STT</th><th class="col-time">Tiếp nhận</th><th>Thiết bị</th><th class="col-dept">Khoa</th><th>Tình trạng/Nguyên nhân hỏng</th><th>Hình thức</th><th>Đơn vị xử lý</th><th class="col-status">Trạng thái xử lý</th><th>TTTB sau sửa chữa</th><th>Tóm tắt xử lý</th><th>Ghi chú</th><th class="col-actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="table-footer-actions"><button class="btn btn-primary" id="exportRepairExcelBtn">Xuất Excel</button></div>
+      </section>
+
+      <dialog id="repairDialog" class="wide-dialog repair-dialog">
+        <form id="repairForm" method="dialog">
+          <input type="hidden" id="repairId" />
+          <input type="hidden" id="sourceIncidentId" />
+          <input type="hidden" id="selectedDeviceId" />
+          <div class="dialog-head sticky-dialog-head">
+            <div>
+              <h2 id="repairDialogTitle">Tạo phiếu sửa chữa</h2>
+              <p id="repairDialogSubtitle">Phiếu sửa chữa V1.0: tạo phiếu gọn, cập nhật diễn biến theo nhật ký, không xóa dữ liệu</p>
+              <span id="sourceBadge" class="tag green" style="display:none">Nguồn: Sự cố</span>
+            </div>
+            <button class="btn" type="button" id="closeRepairDialogBtn">Hủy</button>
+          </div>
+
+          <div id="prefillNotice" class="notice success" style="display:none"></div>
+
+          <section class="repair-section">
+            <h3>1. Thông tin thiết bị</h3>
+            <div class="form-grid repair-form-grid">
+              <label class="field span-3"><span class="field-label">Chọn thiết bị</span><input id="repairDeviceSearch" list="deviceOptions" placeholder="Tìm theo mã thiết bị, tên thiết bị, model hoặc serial" autocomplete="off" /><datalist id="deviceOptions"></datalist></label>
+              <label class="field"><span class="field-label">Tên thiết bị</span><input id="repairDeviceName" readonly /></label>
+              <label class="field"><span class="field-label">Mã thiết bị</span><input id="repairDeviceCode" readonly /></label>
+              <label class="field"><span class="field-label">Khoa/phòng</span><input id="repairDept" readonly /></label>
+              <label class="field"><span class="field-label">Vị trí</span><input id="repairLocation" readonly /></label>
+              <label class="field"><span class="field-label">Model</span><input id="repairModel" readonly /></label>
+              <label class="field"><span class="field-label">Serial Number</span><input id="repairSerial" readonly /></label>
+            </div>
+          </section>
+
+          <section class="repair-section">
+            <h3>2. Thông tin hỏng / sự cố</h3>
+            <div class="form-grid repair-form-grid">
+              <label class="field"><span class="field-label">Thời gian tiếp nhận</span><input id="repairDate" type="datetime-local" required /></label>
+              <label class="field"><span class="field-label">Người báo / người ghi nhận</span><input id="reporter" /></label>
+              <label class="field span-3"><span class="field-label">Hiện tượng hỏng / nguyên nhân</span><textarea id="issue" class="textarea-medium" placeholder="Mô tả tình trạng hỏng, dấu hiệu bất thường, nguyên nhân ban đầu..." required></textarea></label>
+            </div>
+          </section>
+
+          <section class="repair-section">
+            <h3>3. Nội dung sửa chữa</h3>
+            <div class="form-grid repair-form-grid">
+              <label class="field"><span class="field-label">Trạng thái xử lý</span><select id="repairStatus"><option>Đang xử lý</option><option>Chờ linh kiện</option><option>Chuyển hãng/Bảo hành</option><option>Đã hoàn thành</option><option>Không sửa được</option></select></label>
+              <label class="field"><span class="field-label">Hình thức sửa chữa</span><select id="method"><option>Nội bộ</option><option>Thuê ngoài</option><option>Bảo hành/Hãng</option><option>Khác</option></select></label>
+              <label class="field"><span class="field-label">Người phụ trách</span><input id="person" placeholder="VD: Khoa Trang bị / tổ kỹ thuật / đơn vị bảo hành" /></label>
+              <label class="field"><span class="field-label">Thời gian cập nhật / thực hiện</span><input id="actionTime" type="datetime-local" /></label>
+              <label class="field"><span class="field-label">Chi phí</span><input id="cost" type="number" min="0" value="0" /></label>
+              <label class="field span-3"><span class="field-label">Nội dung cập nhật / diễn biến xử lý</span><textarea id="work" class="textarea-large" placeholder="Chỉ nhập nội dung cập nhật mới: đã kiểm tra gì, xử lý gì, chờ gì, kết quả ra sao..."></textarea></label>
+              <label class="field"><span class="field-label">Kết quả xử lý</span><input id="result" placeholder="VD: Đã sửa, đưa vào sử dụng / Đề nghị thay thế" /></label>
+              <label class="field"><span class="field-label">Tình trạng thiết bị sau sửa</span><select id="statusAfter"><option>Đang hoạt động</option><option>Chờ sửa chữa</option><option>Ngừng hoạt động</option></select></label>
+              <label class="field repair-history-toggle"><input id="saveHistory" type="checkbox" checked /> <span>Lưu vào lý lịch thiết bị</span></label>
+              <label class="field span-2"><span class="field-label">Ghi chú</span><textarea id="note" placeholder="Ghi chú bổ sung, số hóa đơn, số biên bản, vật tư thay thế..."></textarea></label>
+              <label class="field"><span class="field-label">File đính kèm</span><input id="repairFiles" type="file" multiple /><small id="fileHint" class="small">Có thể đính kèm biên bản, báo giá, hóa đơn, ảnh trước/sau sửa.</small></label>
+            </div>
+          </section>
+
+          <div class="dialog-footer sticky-dialog-footer">
+            <button class="btn" type="button" id="cancelRepairBtn">Hủy</button>
+            <button class="btn btn-primary" type="submit" id="saveRepairBtn">Lưu phiếu</button>
+          </div>
+        </form>
+      </dialog>
+
+      <dialog id="repairHistoryDialog" class="history-dialog repair-history-dialog">
+        <div class="history-dialog-head"><h3>Lịch sử sửa chữa</h3><button class="btn" type="button" id="closeRepairHistoryBtn">Đóng</button></div>
+        <div id="repairHistoryBody" class="repair-timeline"></div>
+      </dialog>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  <script src="/maintenance.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bảo dưỡng</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar"><div><h1 id="pageTitle" class="page-title"></h1><p id="pageSubtitle" class="page-subtitle"></p></div><div class="table-actions"><button class="btn btn-primary" id="addMaintTopBtn" type="button">+ Thêm bảo dưỡng</button><div class="user-box">Người dùng: Quản trị viên</div></div></div>
+      <section class="card compact-card">
+        <div class="filters maintenance-filter-grid">
+          <label class="field"><span class="field-label">Từ ngày</span><input id="fromDate" type="date" /></label>
+          <label class="field"><span class="field-label">Đến ngày</span><input id="toDate" type="date" /></label>
+          <label class="field field-wide"><span class="field-label">Tìm kiếm</span><input id="searchInput" placeholder="Mã, tên, nội dung, người thực hiện" /></label>
+          <label class="field"><span class="field-label">Thiết bị</span><select id="deviceFilter"><option value="ALL">Tất cả thiết bị</option></select></label>
+          <label class="field"><span class="field-label">Loại bảo dưỡng</span><select id="typeFilter"><option value="ALL">Tất cả loại</option><option>Định kỳ</option><option>Đột xuất</option></select></label>
+          <label class="field"><span class="field-label">Đơn vị</span><select id="vendorFilter"><option value="ALL">Tất cả đơn vị</option></select></label>
+          <div class="filter-actions"><button class="btn btn-primary" id="filterBtn">Lọc</button><button class="btn" id="clearFilterBtn">Xóa lọc</button></div>
+        </div>
+      </section>
+      <section class="card">
+        <div class="table-card-header"><h3 id="countLabel">0 bản ghi</h3></div>
+        <div class="table-wrap scroll-area"><table><thead><tr><th class="col-stt">STT</th><th class="col-time">Thời gian</th><th>Mã TB</th><th>Thiết bị</th><th class="col-dept">Khoa</th><th>Loại bảo dưỡng</th><th>Nội dung</th><th>Kết quả</th><th>Người thực hiện</th><th>Đơn vị</th><th>Lần tiếp theo</th><th>File</th><th class="col-actions">Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div><div class="table-footer-actions"><button class="btn btn-primary" id="exportMaintBtn">Xuất Excel</button></div>
+      </section>
+      <section class="card">
+        <div class="table-card-header"><h3 id="formTitle">Phiếu bảo dưỡng</h3><div class="small">Có thể tải lên biên bản bảo dưỡng, phiếu kiểm tra, ảnh hiện trạng hoặc tài liệu liên quan.</div></div>
+        <form id="form" enctype="multipart/form-data">
+          <input type="hidden" id="maintId" />
+          <div class="form-grid maintenance-form-grid">
+            <label class="field span-3"><span class="field-label">Thiết bị</span><input id="deviceSearch" list="maintDeviceOptions" placeholder="Gõ mã / tên thiết bị / model / Serial Number để chọn" autocomplete="off" required /><input type="hidden" id="deviceId" /><datalist id="maintDeviceOptions"></datalist></label>
+            <label class="field"><span class="field-label">Khoa</span><input id="maintDept" readonly /></label>
+            <label class="field"><span class="field-label">Vị trí</span><input id="maintLocation" readonly /></label>
+            <label class="field"><span class="field-label">Thời gian</span><input id="date" type="datetime-local" required /></label>
+            <label class="field"><span class="field-label">Loại bảo dưỡng</span><select id="type"><option>Định kỳ</option><option>Đột xuất</option></select></label>
+            
+            <input type="hidden" id="result" value="Đạt" />
+            <label class="field span-3"><span class="field-label">Nội dung bảo dưỡng</span><textarea id="content" class="textarea-medium" required></textarea></label>
+            <label class="field"><span class="field-label">Người thực hiện</span><input id="performer" /></label>
+            <label class="field"><span class="field-label">Người sử dụng xác nhận</span><input id="userConfirm" /></label>
+            <label class="field"><span class="field-label">Đơn vị thực hiện</span><input id="vendor" /></label>
+            <label class="field"><span class="field-label">Ngày bảo dưỡng tiếp theo</span><input id="nextDate" type="date" /></label>
+            <label class="field span-2"><span class="field-label">Tải file đính kèm</span><input id="file" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" /><span class="small" id="fileHint">Chọn tệp nếu có biên bản hoặc ảnh hiện trạng.</span></label>
+            <label class="field span-3"><span class="field-label">Ghi chú</span><textarea id="note"></textarea></label>
+          </div>
+          <div class="form-actions"><button class="btn btn-primary" type="submit" id="saveMaintBtn">Lưu bảo dưỡng</button><button class="btn" type="button" id="resetBtn2">Đặt lại</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  <script src="/inspection.js"></script>
+</body>
+</html>

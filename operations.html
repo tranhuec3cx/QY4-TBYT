@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vận hành hệ thống</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="user-box">Người dùng: Quản trị viên</div>
+      </div>
+
+      <section class="kpi-grid" id="opsKpis"></section>
+
+      <section class="settings-grid-balanced">
+        <div class="card">
+          <div class="table-card-header"><h3>Sức khỏe hệ thống</h3><div class="small">Kiểm tra nhanh các điều kiện quan trọng trước khi vận hành.</div></div>
+          <div id="healthRows" class="health-list"></div>
+        </div>
+        <div class="card">
+          <div class="table-card-header"><h3>Thao tác vận hành nhanh</h3><div class="small">Dùng cho quản trị nội bộ Khoa Trang bị.</div></div>
+          <div class="ops-actions">
+            <a class="btn btn-primary" href="/api/reports/operational-excel">Xuất báo cáo vận hành Excel</a>
+            <button class="btn" id="reloadHealthBtn">Kiểm tra lại hệ thống</button>
+          </div>
+          <div class="ops-note">Khuyến nghị: tạo sao lưu cuối ngày, xuất báo cáo hằng tuần và bổ sung dữ liệu còn thiếu trước khi bàn giao trực.</div>
+        </div>
+      </section>
+
+      <section class="settings-grid-balanced">
+        <div class="card">
+          <div class="table-card-header"><h3>Sao lưu dữ liệu</h3><div class="small">Nên sao lưu trước khi import, xóa dữ liệu hoặc cập nhật phiên bản.</div></div>
+          <div class="form-actions" style="margin-bottom:12px;">
+            <button class="btn btn-primary" id="createBackupBtn">Tạo bản sao lưu ngay</button>
+            <button class="btn" id="reloadBackupBtn">Tải lại danh sách</button>
+          </div>
+          <div class="table-wrap scroll-area">
+            <table>
+              <thead><tr><th>File</th><th>Dung lượng</th><th>Thời gian</th><th>Thao tác</th></tr></thead>
+              <tbody id="backupRows"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-card-header"><h3>Nhật ký thao tác gần đây</h3><div class="small">Theo dõi thay đổi quan trọng khi vận hành thực tế.</div></div>
+          <div class="table-wrap scroll-area">
+            <table>
+              <thead><tr><th>Thời gian</th><th>Phân hệ</th><th>Thao tác</th><th>Nội dung</th></tr></thead>
+              <tbody id="auditRows"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="settings-grid-balanced">
+        <div class="card">
+          <div class="table-card-header"><h3>Vật tư/linh kiện cảnh báo tồn kho</h3><div class="small">Các vật tư có số lượng thấp hơn mức tối thiểu.</div></div>
+          <div class="table-wrap scroll-area">
+            <table>
+              <thead><tr><th>Mã</th><th>Tên vật tư</th><th>Tồn</th><th>Tối thiểu</th><th>Đơn vị</th></tr></thead>
+              <tbody id="partRows"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-card-header"><h3>Cảnh báo vận hành</h3><div class="small">Bảo dưỡng, kiểm định, bảo hành và phiếu sửa chữa cần chú ý.</div></div>
+          <div id="alertRows" class="alert-list"></div>
+        </div>
+      </section>
+          <section class="card">
+        <div class="table-card-header"><h3>Dữ liệu thiết bị cần bổ sung</h3><div class="small">Các thiếu sót này không làm dừng hệ thống nhưng nên hoàn thiện để báo cáo chính xác.</div></div>
+        <div class="table-wrap scroll-area">
+          <table>
+            <thead><tr><th>Mức</th><th>Loại</th><th>Mã TB</th><th>Tên thiết bị</th><th>Khoa</th><th>Nội dung</th><th></th></tr></thead>
+            <tbody id="qualityRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/operations.js"></script>
+</body>
+</html>

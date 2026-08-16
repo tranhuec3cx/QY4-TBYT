@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Báo cáo</title>
+  <link rel="stylesheet" href="/styles.css"/>
+</head>
+<body>
+  <div class="layout">
+    <div id="menuHost"></div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 id="pageTitle" class="page-title"></h1>
+          <p id="pageSubtitle" class="page-subtitle"></p>
+        </div>
+        <div class="page-actions"></div>
+      </div>
+
+      <section class="reports-summary-grid" id="reportCards"></section>
+
+      <section class="card compact-card">
+        <div class="filters report-filter-grid-v5">
+          <label class="field"><span class="field-label">Nhóm báo cáo</span><select id="reportGroup"></select></label>
+          <label class="field"><span class="field-label">Loại báo cáo</span><select id="reportType"></select></label>
+          <label class="field"><span class="field-label">Từ ngày</span><input id="fromDate" type="date" /></label>
+          <label class="field"><span class="field-label">Đến ngày</span><input id="toDate" type="date" /></label>
+          <label class="field"><span class="field-label">Khoa/phòng</span><select id="deptFilter"><option value="ALL">Tất cả</option></select></label>
+          <label class="field"><span class="field-label">Nhóm thiết bị</span><select id="groupFilter"><option value="ALL">Tất cả</option></select></label>
+          <label class="field field-wide"><span class="field-label">Tìm kiếm</span><input id="searchInput" placeholder="Mã, tên thiết bị, khoa, model, serial..."/></label>
+          <div class="filter-actions"><button class="btn btn-primary" id="filterBtn">Lọc</button><button class="btn" id="clearFilterBtn">Xóa lọc</button></div>
+        </div>
+      </section>
+
+      <section class="card report-main-card">
+        <div class="table-card-header report-title-row">
+          <div>
+            <h3 id="countLabel">0 dòng</h3>
+            <div id="reportHint" class="small">Chọn báo cáo để xem dữ liệu.</div>
+          </div>
+          <div id="reportBadge" class="report-badge">Báo cáo</div>
+        </div>
+        <div class="table-wrap scroll-area"><table class="report-table"><thead id="thead"></thead><tbody id="rows"></tbody></table></div>
+        <div class="report-bottom-actions"><button class="btn btn-primary" id="exportBottomBtn">Xuất Excel</button></div>
+      </section>
+    </main>
+  </div>
+  <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
+  <script src="/reports.js"></script>
+</body>
+</html>
