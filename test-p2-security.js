@@ -5,6 +5,7 @@ const assert = require('assert');
 const express = require('express');
 const Database = require('better-sqlite3');
 const { attach } = require('./p2-security');
+const { attach: attachScopeGuard } = require('./p2-scope-guard');
 
 (async () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'qy4-p2-'));
@@ -33,6 +34,8 @@ const { attach } = require('./p2-security');
   setup.prepare('INSERT INTO users(full_name,username,role,department_code,status,phone) VALUES (?,?,?,?,?,?)').run('Khoa A10','a10user','Người dùng khoa','A10','Hoạt động','');
   setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(1,'A10','Máy A10');
   setup.prepare('INSERT INTO devices(id,department_code,name) VALUES (?,?,?)').run(2,'C7','Máy C7');
+  setup.prepare('INSERT INTO incidents(device_id,status) VALUES (?,?)').run(1,'Mới ghi nhận');
+  setup.prepare('INSERT INTO incidents(device_id,status) VALUES (?,?)').run(2,'Mới ghi nhận');
   setup.prepare('INSERT INTO documents(device_id,stored_name,file_path) VALUES (?,?,?)').run(1,'doc-a10.txt','/uploads/documents/doc-a10.txt');
   setup.close();
 
@@ -44,6 +47,7 @@ const { attach } = require('./p2-security');
   app.set('trust proxy', true);
   app.use(express.json());
   const security = attach({ app, express, Database, dbPath, publicDir, uploadsDir, qrUploadsDir });
+  attachScopeGuard({ app, Database, dbPath, getUser:security.getUser, isTech:security.isTech });
   security.initialize();
 
   app.get('/api/users', (_req,res) => {
@@ -55,7 +59,12 @@ const { attach } = require('./p2-security');
   app.get('/api/devices/:id', (req,res) => {
     const c = new Database(dbPath); const row = c.prepare('SELECT * FROM devices WHERE id=?').get(Number(req.params.id)); c.close(); row ? res.json(row) : res.status(404).json({error:'not found'});
   });
-  app.get('/api/incidents', (_req,res) => res.json([]));
+  app.get('/api/incidents', (_req,res) => {
+    const c = new Database(dbPath); const rows = c.prepare('SELECT i.*,dv.department_code FROM incidents i JOIN devices dv ON dv.id=i.device_id ORDER BY i.id').all(); c.close(); res.json(rows);
+  });
+  app.get('/api/incidents/:id', (req,res) => {
+    const c = new Database(dbPath); const row = c.prepare('SELECT * FROM incidents WHERE id=?').get(Number(req.params.id)); c.close(); row ? res.json(row) : res.status(404).json({error:'not found'});
+  });
   app.post('/api/incidents', (req,res) => res.json({ok:true, device_id:req.body.device_id}));
   app.post('/api/repairs', (_req,res) => res.json({ok:true}));
   app.get('/api/qr/device/:id', (req,res) => res.json({id:Number(req.params.id), public:true}));
@@ -111,8 +120,17 @@ const { attach } = require('./p2-security');
     body = await json(r);
     assert.deepEqual(body.map(x => x.id), [1], 'Tài khoản khoa chỉ được thấy thiết bị khoa mình');
 
+    r = await req('/api/devices/1', { headers:{'Cookie':deptCookie} });
+    assert.equal(r.status, 200, 'Khoa được xem hồ sơ thiết bị thuộc khoa mình');
+
     r = await req('/api/devices/2', { headers:{'Cookie':deptCookie} });
-    assert.equal(r.status, 200, 'P2 hiện kiểm soát danh sách; route chi tiết sẽ được chặn ở lớp nghiệp vụ tiếp theo nếu cần');
+    assert.equal(r.status, 403, 'Khoa không được mở hồ sơ chi tiết thiết bị khoa khác');
+
+    r = await req('/api/incidents/1', { headers:{'Cookie':deptCookie} });
+    assert.equal(r.status, 200, 'Khoa được xem sự cố thuộc khoa mình');
+
+    r = await req('/api/incidents/2', { headers:{'Cookie':deptCookie} });
+    assert.equal(r.status, 403, 'Khoa không được mở sự cố chi tiết của khoa khác');
 
     r = await req('/api/incidents', { method:'POST', headers:{'Content-Type':'application/json','Cookie':deptCookie}, body:JSON.stringify({device_id:1}) });
     assert.equal(r.status, 200, 'Khoa được báo sự cố cho thiết bị thuộc khoa');
@@ -140,7 +158,7 @@ const { attach } = require('./p2-security');
     verify.close();
     assert.ok(auditCount >= 5, 'Phải có audit log cho các thao tác xác thực/thay đổi dữ liệu');
 
-    console.log('[P2 TEST] PASS - login, password, role scope, audit và protected uploads hoạt động.');
+    console.log('[P2 TEST] PASS - login, password, role scope, detail scope, audit và protected uploads hoạt động.');
   } finally {
     await new Promise(resolve => server.close(resolve));
     fs.rmSync(root, { recursive:true, force:true });
