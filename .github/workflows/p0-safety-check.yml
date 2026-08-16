@@ -22,8 +22,8 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Reject high/critical production dependency vulnerabilities
-        run: npm audit --omit=dev --audit-level=high
+      - name: Require zero production dependency vulnerabilities
+        run: npm audit --omit=dev
       - name: Ensure vulnerable SheetJS package is absent
         run: test ! -d node_modules/xlsx
       - name: Inventory legacy XLSX compatibility usage
@@ -32,6 +32,8 @@ jobs:
         run: npm run check:safety
       - name: Verify ExcelJS legacy browser alias
         run: test -f node_modules/exceljs/dist/xlsx.full.min.js
+      - name: Test ExcelJS legacy compatibility
+        run: npm run test:p3:excel
       - name: Integration test P2 auth and scope
         run: npm run test:p2
       - name: Fresh production startup and seed isolation
