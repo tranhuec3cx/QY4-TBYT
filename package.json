@@ -5,20 +5,25 @@
   "description": "Bản V5.0 hoàn thiện giao diện, nghiệp vụ, QR và trung tâm báo cáo - QY4 TTBYT",
   "main": "server.js",
   "scripts": {
-    "start": "node safe-start.js",
-    "demo": "node safe-start.js --demo",
-    "check:p0": "node safe-start.js --check",
-    "check:p1": "node safe-start.js --check",
-    "check:p2": "node safe-start.js --check",
-    "check:safety": "node safe-start.js --check",
-    "test:p2": "node test-p2-security.js"
+    "start": "node p3-start.js",
+    "demo": "node p3-start.js --demo",
+    "check:p0": "node p3-start.js --check",
+    "check:p1": "node p3-start.js --check",
+    "check:p2": "node p3-start.js --check",
+    "check:p3": "node p3-start.js --check",
+    "check:safety": "node p3-start.js --check",
+    "test:p2": "node test-p2-security.js",
+    "test:p3:excel": "node test-p3-excel.js",
+    "test:p3:reports": "node test-p3-reports.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
-    "express": "^4.21.2",
-    "xlsx": "^0.18.5",
-    "multer": "^1.4.5-lts.1",
     "exceljs": "^4.4.0",
+    "express": "^4.21.2",
+    "multer": "^2.2.0",
     "qrcode": "^1.5.4"
+  },
+  "overrides": {
+    "uuid": "^11.1.1"
   }
 }

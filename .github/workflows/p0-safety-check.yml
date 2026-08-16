@@ -1,4 +1,4 @@
-name: Safety Check P0-P2
+name: Safety Check P0-P3
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
       - fix/p0-safety
       - fix/p1-incident-repair
       - fix/p2-auth-audit
+      - fix/p3-dependency-modules
 
 jobs:
   safety-check:
@@ -21,7 +22,133 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
-      - name: Verify P0-P2 source hardening
+      - name: Require zero production dependency vulnerabilities
+        run: npm audit --omit=dev
+      - name: Ensure vulnerable SheetJS package is absent
+        run: test ! -d node_modules/xlsx
+      - name: Inventory legacy XLSX compatibility usage
+        run: grep -R -n -E 'XLSX|xlsx\.full|/vendor/' public server.js p3-start.js || true
+      - name: Verify P0-P3 source hardening
         run: npm run check:safety
+      - name: Verify ExcelJS legacy browser alias
+        run: test -f node_modules/exceljs/dist/xlsx.full.min.js
+      - name: Test ExcelJS legacy compatibility
+        run: npm run test:p3:excel
+      - name: Test P3 report logic
+        run: npm run test:p3:reports
       - name: Integration test P2 auth and scope
         run: npm run test:p2
+      - name: Fresh production startup and seed isolation
+        env:
+          PORT: '5099'
+          DEMO_MODE: 'false'
+          ADMIN_INITIAL_PASSWORD: 'CI-Only-Strong-Password-5099'
+        run: |
+          rm -rf db
+          node p3-start.js > /tmp/qy4-prod.log 2>&1 &
+          PID=$!
+          sleep 3
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat /tmp/qy4-prod.log
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:5099/login.html > /tmp/qy4-login.html
+          grep -q "Đăng nhập" /tmp/qy4-login.html
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database('db/qy4_ttbyt.sqlite', { readonly: true });
+          const devices = db.prepare('SELECT COUNT(*) c FROM devices').get().c;
+          const departments = db.prepare('SELECT COUNT(*) c FROM departments').get().c;
+          const users = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+          db.close();
+          if (devices !== 0) throw new Error(`Production DB trắng không được sinh thiết bị demo: ${devices}`);
+          if (departments < 1) throw new Error('Production phải có danh mục khoa/phòng nền.');
+          if (users !== 1) throw new Error(`Production ban đầu chỉ được có tài khoản admin: ${users}`);
+          console.log(`[P3 PROD] departments=${departments}, users=${users}, devices=${devices}`);
+          NODE
+          kill "$PID"
+          wait "$PID" 2>/dev/null || true
+          cat /tmp/qy4-prod.log
+      - name: Fresh demo startup and lifecycle preservation
+        env:
+          PORT: '5100'
+          DEMO_MODE: 'true'
+          ADMIN_INITIAL_PASSWORD: 'CI-Demo-Strong-Password-5100'
+        run: |
+          rm -rf db
+          node p3-start.js --demo > /tmp/qy4-demo.log 2>&1 &
+          PID=$!
+          sleep 3
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat /tmp/qy4-demo.log
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:5100/login.html > /tmp/qy4-demo-login.html
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database('db/qy4_ttbyt.sqlite', { readonly: true });
+          const devices = db.prepare('SELECT COUNT(*) c FROM devices').get().c;
+          const users = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+          db.close();
+          if (devices < 1) throw new Error('DEMO_MODE phải tạo bộ thiết bị mẫu.');
+          if (users < 2) throw new Error('DEMO_MODE phải tạo bộ người dùng mẫu.');
+          console.log(`[P3 DEMO] users=${users}, devices=${devices}`);
+          NODE
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const base = 'http://127.0.0.1:5100';
+          const cookieOf = res => String(res.headers.get('set-cookie') || '').split(';')[0];
+          async function json(res) { const t = await res.text(); try { return JSON.parse(t); } catch { return t; } }
+          (async () => {
+            let res = await fetch(base + '/api/auth/login', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({username:'admin', password:'CI-Demo-Strong-Password-5100'})
+            });
+            if (!res.ok) throw new Error('Không đăng nhập được admin demo: ' + await res.text());
+            let cookie = cookieOf(res);
+            res = await fetch(base + '/api/auth/change-password', {
+              method: 'POST', headers: {'Content-Type':'application/json','Cookie':cookie},
+              body: JSON.stringify({current_password:'CI-Demo-Strong-Password-5100', new_password:'CI-Demo-Changed-Password-5100'})
+            });
+            if (!res.ok) throw new Error('Không đổi được mật khẩu admin demo: ' + await res.text());
+            cookie = cookieOf(res) || cookie;
+
+            res = await fetch(base + '/api/maintenances', {headers:{'Cookie':cookie}});
+            const maints = await json(res);
+            res = await fetch(base + '/api/inspections', {headers:{'Cookie':cookie}});
+            const inspections = await json(res);
+            if (!Array.isArray(maints) || !maints.length) throw new Error('Demo phải có bản ghi bảo dưỡng để test vòng đời.');
+            if (!Array.isArray(inspections) || !inspections.length) throw new Error('Demo phải có hồ sơ kiểm định để test vòng đời.');
+            const maintId = maints[0].id;
+            const inspectionId = inspections[0].id;
+
+            res = await fetch(base + `/api/maintenances/${maintId}`, {
+              method:'DELETE', headers:{'Content-Type':'application/json','Cookie':cookie},
+              body:JSON.stringify({reason:'CI kiểm thử bảo toàn lịch sử'})
+            });
+            if (!res.ok) throw new Error('Không hủy được bảo dưỡng: ' + await res.text());
+            res = await fetch(base + `/api/inspections/${inspectionId}`, {
+              method:'DELETE', headers:{'Content-Type':'application/json','Cookie':cookie},
+              body:JSON.stringify({reason:'CI kiểm thử bảo toàn lịch sử'})
+            });
+            if (!res.ok) throw new Error('Không hủy được kiểm định: ' + await res.text());
+
+            res = await fetch(base + '/api/maintenances', {headers:{'Cookie':cookie}});
+            const maintsAfter = await json(res);
+            res = await fetch(base + '/api/inspections', {headers:{'Cookie':cookie}});
+            const inspectionsAfter = await json(res);
+            if (maintsAfter.some(x => Number(x.id) === Number(maintId))) throw new Error('Bản ghi bảo dưỡng đã hủy vẫn còn trong danh sách hoạt động.');
+            if (inspectionsAfter.some(x => Number(x.id) === Number(inspectionId))) throw new Error('Hồ sơ kiểm định đã hủy vẫn còn trong danh sách hoạt động.');
+
+            const db = new Database('db/qy4_ttbyt.sqlite', { readonly:true });
+            const m = db.prepare('SELECT id,cancelled_at,cancel_reason FROM maintenances WHERE id=?').get(maintId);
+            const i = db.prepare('SELECT id,cancelled_at,cancel_reason FROM inspections WHERE id=?').get(inspectionId);
+            db.close();
+            if (!m || !m.cancelled_at) throw new Error('Bảo dưỡng bị xóa vật lý hoặc chưa ghi cancelled_at.');
+            if (!i || !i.cancelled_at) throw new Error('Kiểm định bị xóa vật lý hoặc chưa ghi cancelled_at.');
+            console.log(`[P3 LIFECYCLE] PASS - maintenance #${maintId}, inspection #${inspectionId} được hủy mềm và giữ nguyên DB.`);
+          })().catch(err => { console.error(err); process.exit(1); });
+          NODE
+          kill "$PID"
+          wait "$PID" 2>/dev/null || true
+          cat /tmp/qy4-demo.log
