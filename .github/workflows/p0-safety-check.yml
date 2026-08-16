@@ -1,4 +1,4 @@
-name: Safety Check P0-P2
+name: Safety Check P0-P3
 
 on:
   pull_request:
@@ -7,6 +7,7 @@ on:
       - fix/p0-safety
       - fix/p1-incident-repair
       - fix/p2-auth-audit
+      - fix/p3-dependency-modules
 
 jobs:
   safety-check:
@@ -21,6 +22,8 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm ci
+      - name: P3 dependency audit snapshot
+        run: npm audit --omit=dev || true
       - name: Verify P0-P2 source hardening
         run: npm run check:safety
       - name: Integration test P2 auth and scope
