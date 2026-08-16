@@ -67,7 +67,7 @@ jobs:
           kill "$PID"
           wait "$PID" 2>/dev/null || true
           cat /tmp/qy4-prod.log
-      - name: Fresh demo startup
+      - name: Fresh demo startup and lifecycle preservation
         env:
           PORT: '5100'
           DEMO_MODE: 'true'
@@ -91,6 +91,61 @@ jobs:
           if (devices < 1) throw new Error('DEMO_MODE phải tạo bộ thiết bị mẫu.');
           if (users < 2) throw new Error('DEMO_MODE phải tạo bộ người dùng mẫu.');
           console.log(`[P3 DEMO] users=${users}, devices=${devices}`);
+          NODE
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const base = 'http://127.0.0.1:5100';
+          const cookieOf = res => String(res.headers.get('set-cookie') || '').split(';')[0];
+          async function json(res) { const t = await res.text(); try { return JSON.parse(t); } catch { return t; } }
+          (async () => {
+            let res = await fetch(base + '/api/auth/login', {
+              method: 'POST', headers: {'Content-Type':'application/json'},
+              body: JSON.stringify({username:'admin', password:'CI-Demo-Strong-Password-5100'})
+            });
+            if (!res.ok) throw new Error('Không đăng nhập được admin demo: ' + await res.text());
+            let cookie = cookieOf(res);
+            res = await fetch(base + '/api/auth/change-password', {
+              method: 'POST', headers: {'Content-Type':'application/json','Cookie':cookie},
+              body: JSON.stringify({current_password:'CI-Demo-Strong-Password-5100', new_password:'CI-Demo-Changed-Password-5100'})
+            });
+            if (!res.ok) throw new Error('Không đổi được mật khẩu admin demo: ' + await res.text());
+            cookie = cookieOf(res) || cookie;
+
+            res = await fetch(base + '/api/maintenances', {headers:{'Cookie':cookie}});
+            const maints = await json(res);
+            res = await fetch(base + '/api/inspections', {headers:{'Cookie':cookie}});
+            const inspections = await json(res);
+            if (!Array.isArray(maints) || !maints.length) throw new Error('Demo phải có bản ghi bảo dưỡng để test vòng đời.');
+            if (!Array.isArray(inspections) || !inspections.length) throw new Error('Demo phải có hồ sơ kiểm định để test vòng đời.');
+            const maintId = maints[0].id;
+            const inspectionId = inspections[0].id;
+
+            res = await fetch(base + `/api/maintenances/${maintId}`, {
+              method:'DELETE', headers:{'Content-Type':'application/json','Cookie':cookie},
+              body:JSON.stringify({reason:'CI kiểm thử bảo toàn lịch sử'})
+            });
+            if (!res.ok) throw new Error('Không hủy được bảo dưỡng: ' + await res.text());
+            res = await fetch(base + `/api/inspections/${inspectionId}`, {
+              method:'DELETE', headers:{'Content-Type':'application/json','Cookie':cookie},
+              body:JSON.stringify({reason:'CI kiểm thử bảo toàn lịch sử'})
+            });
+            if (!res.ok) throw new Error('Không hủy được kiểm định: ' + await res.text());
+
+            res = await fetch(base + '/api/maintenances', {headers:{'Cookie':cookie}});
+            const maintsAfter = await json(res);
+            res = await fetch(base + '/api/inspections', {headers:{'Cookie':cookie}});
+            const inspectionsAfter = await json(res);
+            if (maintsAfter.some(x => Number(x.id) === Number(maintId))) throw new Error('Bản ghi bảo dưỡng đã hủy vẫn còn trong danh sách hoạt động.');
+            if (inspectionsAfter.some(x => Number(x.id) === Number(inspectionId))) throw new Error('Hồ sơ kiểm định đã hủy vẫn còn trong danh sách hoạt động.');
+
+            const db = new Database('db/qy4_ttbyt.sqlite', { readonly:true });
+            const m = db.prepare('SELECT id,cancelled_at,cancel_reason FROM maintenances WHERE id=?').get(maintId);
+            const i = db.prepare('SELECT id,cancelled_at,cancel_reason FROM inspections WHERE id=?').get(inspectionId);
+            db.close();
+            if (!m || !m.cancelled_at) throw new Error('Bảo dưỡng bị xóa vật lý hoặc chưa ghi cancelled_at.');
+            if (!i || !i.cancelled_at) throw new Error('Kiểm định bị xóa vật lý hoặc chưa ghi cancelled_at.');
+            console.log(`[P3 LIFECYCLE] PASS - maintenance #${maintId}, inspection #${inspectionId} được hủy mềm và giữ nguyên DB.`);
+          })().catch(err => { console.error(err); process.exit(1); });
           NODE
           kill "$PID"
           wait "$PID" 2>/dev/null || true
