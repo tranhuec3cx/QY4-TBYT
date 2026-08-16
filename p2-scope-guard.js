@@ -33,6 +33,20 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
             return dep === user.department_code || dep.startsWith(`${user.department_code} `) || dep.startsWith(`${user.department_code} -`);
           });
         }
+        // /api/devices/:id của server cũ trả kèm toàn bộ hồ sơ kỹ thuật (sửa chữa,
+        // bảo dưỡng, kiểm định, nhật ký vận hành và tài liệu). Các API con này vốn đã
+        // bị P2 chặn với tài khoản khoa, vì vậy phải redaction ở payload chi tiết để
+        // không thể đọc vòng qua endpoint thiết bị.
+        if (/^\/devices\/\d+$/.test(scopedPath) && data && typeof data === 'object' && !Array.isArray(data)) {
+          data = {
+            ...data,
+            repairs: [],
+            maintenances: [],
+            inspections: [],
+            operation_logs: [],
+            documents: []
+          };
+        }
       }
       return originalJson(data);
     };
