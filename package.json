@@ -5,8 +5,9 @@
   "description": "Bản V5.0 hoàn thiện giao diện, nghiệp vụ, QR và trung tâm báo cáo - QY4 TTBYT",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "demo": "node server.js"
+    "start": "node safe-start.js",
+    "demo": "node safe-start.js --demo",
+    "check:p0": "node safe-start.js --check"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
