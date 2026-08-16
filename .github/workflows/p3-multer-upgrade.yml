@@ -1,0 +1,38 @@
+name: P3 Multer 2 Upgrade
+
+on:
+  push:
+    branches:
+      - fix/p3-dependency-modules
+    paths:
+      - .github/workflows/p3-multer-upgrade.yml
+
+permissions:
+  contents: write
+
+jobs:
+  upgrade-multer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/p3-dependency-modules
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Upgrade Multer to maintained 2.x
+        run: npm install multer@^2 --save
+      - name: Commit dependency files
+        run: |
+          if git diff --quiet -- package.json package-lock.json; then
+            echo "No dependency changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "P3: nâng Multer lên 2.x"
+          git push origin HEAD:fix/p3-dependency-modules
