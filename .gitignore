@@ -16,6 +16,10 @@ uploads/
 # Database
 db/*.sqlite
 db/*.db
+db/*.sqlite-wal
+db/*.sqlite-shm
+*.sqlite-wal
+*.sqlite-shm
 
 # VSCode
 .vscode/
