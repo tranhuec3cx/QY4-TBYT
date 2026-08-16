@@ -1,0 +1,38 @@
+name: P3 Lockfile Safe Fix
+
+on:
+  push:
+    branches:
+      - fix/p3-dependency-modules
+    paths:
+      - .github/workflows/p3-lockfile-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  safe-lockfile-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/p3-dependency-modules
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Apply non-breaking audit fixes to lockfile only
+        run: npm audit fix --package-lock-only --omit=dev || true
+      - name: Commit lockfile if changed
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No lockfile changes"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "P3: cập nhật dependency transitive an toàn"
+          git push origin HEAD:fix/p3-dependency-modules
