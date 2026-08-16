@@ -21,7 +21,8 @@
     "test:p4:scope": "node test-p4-dept-scope.js",
     "test:p5:qr": "node test-p5-qr.js",
     "test:p6:proxy": "node test-p6-proxy.js",
-    "test:p7:qr": "node test-p7-signed-qr.js"
+    "test:p7:qr": "node test-p7-signed-qr.js",
+    "test:p7:client": "node test-p7-qr-client.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
