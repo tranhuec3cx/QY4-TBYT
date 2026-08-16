@@ -5,13 +5,13 @@
   "description": "Bản V5.0 hoàn thiện giao diện, nghiệp vụ, QR và trung tâm báo cáo - QY4 TTBYT",
   "main": "server.js",
   "scripts": {
-    "start": "node p3-start.js",
-    "demo": "node p3-start.js --demo",
-    "check:p0": "node p3-start.js --check",
-    "check:p1": "node p3-start.js --check",
-    "check:p2": "node p3-start.js --check",
-    "check:p3": "node p3-start.js --check",
-    "check:safety": "node p3-start.js --check",
+    "start": "node p7-start.js",
+    "demo": "node p7-start.js --demo",
+    "check:p0": "node p7-start.js --check",
+    "check:p1": "node p7-start.js --check",
+    "check:p2": "node p7-start.js --check",
+    "check:p3": "node p7-start.js --check",
+    "check:safety": "node p7-start.js --check",
     "test:p2": "node test-p2-security.js",
     "test:p3:excel": "node test-p3-excel.js",
     "test:p3:reports": "node test-p3-reports.js",
@@ -20,7 +20,8 @@
     "test:p4:dashboard": "node test-p4-dashboard.js",
     "test:p4:scope": "node test-p4-dept-scope.js",
     "test:p5:qr": "node test-p5-qr.js",
-    "test:p6:proxy": "node test-p6-proxy.js"
+    "test:p6:proxy": "node test-p6-proxy.js",
+    "test:p7:qr": "node test-p7-signed-qr.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
