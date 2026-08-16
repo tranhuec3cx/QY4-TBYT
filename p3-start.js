@@ -27,7 +27,7 @@ express.static = function qy4Static(root, options) {
 };
 
 // P3: server.js cũ dùng chung seedData() cho cả production và demo. Trên DB trắng điều đó
-// vừa tạo dữ liệu thiết bị giả, vừa lỗi vì các bản ghi demo chưa có quality_level/device_code.
+// vừa tạo dữ liệu thiết bị giả, vừa lỗi vì dữ liệu mẫu cũ thiếu một số trường mới.
 // Vá nguồn ngay trước khi safe-start kiểm tra/biên dịch để production chỉ tạo danh mục nền + admin,
 // còn bộ thiết bị mẫu chỉ được sinh khi DEMO_MODE=true.
 const serverPath = path.resolve(__dirname, 'server.js');
@@ -55,6 +55,12 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
     'demo device named parameters',
     '      const info = insertDevice.run(device);',
     '      const info = insertDevice.run({ quality_level: 3, device_code: null, insurance_code: "", ...device });'
+  );
+  source = replaceRequired(
+    source,
+    'demo repair processing status',
+    '      device.repairs.forEach(x => insertRepair.run(deviceId, ...x));',
+    '      device.repairs.forEach(x => insertRepair.run(deviceId, ...x, x[7] === "Chờ sửa chữa" ? "Chờ linh kiện" : "Đã hoàn thành"));'
   );
   return source;
 };
