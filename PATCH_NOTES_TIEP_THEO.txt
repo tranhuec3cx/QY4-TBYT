@@ -1,0 +1,27 @@
+BẢN SỬA TIẾP - KIỂM TRA LẠI TAB SỰ CỐ
+
+1) Đã sửa lại phần tải danh sách sự cố:
+- Trước đây frontend chỉ gọi /api/incidents?preset=last7 nên nếu tạo sự cố có thời gian nằm ngoài 7 ngày gần nhất thì bản ghi đã lưu nhưng không hiện trong bảng.
+- Nay frontend gọi theo đúng khoảng lọc Từ ngày / Đến ngày.
+- Backend /api/incidents nếu không có filter sẽ trả toàn bộ dữ liệu, tránh mất bản ghi khỏi bảng do preset mặc định.
+
+2) Đã sửa lại nút Lưu sự cố:
+- Bọc try/catch để nếu lỗi sẽ hiện alert rõ ràng.
+- Sau khi lưu thành công sẽ tải lại dữ liệu từ server, cập nhật bảng ngay.
+- Hiện thông báo “Đã lưu sự cố #...” hoặc “Đã cập nhật sự cố.”
+- Nếu người ghi nhận để trống, tự dùng “Quản trị viên” để tránh lỗi không lưu.
+
+3) Đã sửa logic bộ lọc:
+- Khi đổi Từ ngày / Đến ngày, phần mềm gọi lại server để lấy đúng dữ liệu.
+- Các bộ lọc tìm kiếm, thiết bị, mức độ, trạng thái vẫn lọc trực tiếp trên dữ liệu đã tải.
+
+4) Đã kiểm tra và bỏ route lịch sử sự cố bị khai báo trùng.
+
+CÁCH TEST NHANH:
+1. npm start
+2. Mở http://localhost:5000/tickets.html
+3. Chọn thiết bị, nhập mô tả, mức độ, người ghi nhận, thời gian.
+4. Bấm Lưu sự cố.
+5. Bảng phía trên phải hiện ngay bản ghi mới.
+6. Bấm Lịch sử: phải thấy dòng “Tạo mới”.
+7. Thử đổi Từ ngày / Đến ngày, bản ghi phải vẫn hiện nếu nằm trong khoảng lọc.

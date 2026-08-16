@@ -1,0 +1,38 @@
+BẢN TIẾP TỤC - HOÀN THIỆN THEO HƯỚNG KỸ THUẬT
+
+1) Mã thiết bị
+- Đổi quy tắc mã thiết bị từ QY4-C7-MRI-0001 sang dạng kỹ thuật ngắn: C7.MRI.0001.
+- Tự động chuẩn hóa mã cũ QY4-C7-MRI-0001 hoặc C7-MRI-0001 về C7.MRI.0001 khi chạy server.
+- Serial Number không còn dùng làm mã thiết bị.
+- Nếu dữ liệu cũ đang để mã ở serial thì hệ thống chuyển sang Mã bảo hiểm và để serial trống.
+- Thêm unique index cho device_code để hạn chế trùng mã.
+
+2) Sửa tiếp lỗi sự cố không hiện ở bản ghi
+- POST /api/incidents trả về luôn bản ghi vừa tạo kèm thông tin thiết bị.
+- Frontend thêm ngay bản ghi mới vào bảng sau khi lưu thành công, không phụ thuộc hoàn toàn vào bộ lọc ngày.
+- Đổi cách lấy giờ mặc định của form sự cố sang giờ local của máy, không dùng UTC ISO.
+- Sau khi lưu, thông báo rõ: bản ghi đã hiển thị trong bảng.
+
+3) Giao diện danh sách thiết bị theo hướng kỹ thuật
+- Bảng thiết bị chuyển sang phong cách registry kỹ thuật: header xanh nhạt, dòng zebra, hover vàng nhạt, viền ô rõ hơn.
+- Thêm tiêu đề “Thực lực chi tiết” giống kiểu phần mềm quản lý trang bị.
+- Cột đổi tên kỹ thuật hơn: Tên trang bị, Loại trang bị, Khoa sử dụng, Serial Number.
+
+4) Kiểm tra kỹ thuật
+- Đã chạy kiểm tra cú pháp bằng node --check cho server.js và toàn bộ public/*.js.
+- Không chạy được npm start trong môi trường này vì npm install better-sqlite3 cần tải header Node từ internet, nhưng internet bị lỗi EAI_AGAIN. Khi chạy trên máy của bạn, dùng Node phù hợp và npm install bình thường.
+
+CÁCH TEST NHANH
+1. Giải nén zip.
+2. Chạy:
+   npm install
+   npm start
+3. Mở http://localhost:5000
+4. Vào Thiết bị y tế:
+   - Kiểm tra mã thiết bị hiển thị dạng C7.MRI.0001.
+   - Thêm thiết bị mới, mã tự tăng theo khoa + nhóm.
+5. Vào Sự cố:
+   - Chọn thiết bị.
+   - Bấm Lưu sự cố.
+   - Kiểm tra bản ghi xuất hiện ngay trong bảng.
+   - Bấm Lịch sử để xem bản ghi tạo mới.

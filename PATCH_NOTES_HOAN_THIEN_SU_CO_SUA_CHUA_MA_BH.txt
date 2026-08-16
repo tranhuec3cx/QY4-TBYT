@@ -1,0 +1,51 @@
+BẢN HOÀN THIỆN THEO QUY TRÌNH MỚI
+
+1) Module Sự cố
+- Chỉ còn 3 trạng thái:
+  + Mới ghi nhận
+  + Đã chuyển sửa chữa
+  + Đã xử lý tại chỗ
+- Bỏ lịch sử sự cố:
+  + Không còn nút Lịch sử ở bảng Sự cố.
+  + Không còn modal Lịch sử sự cố.
+  + Backend không ghi activity_history cho incident nữa.
+- Cột thao tác sự cố được rút gọn:
+  + Xem HS
+  + Chuyển sửa chữa
+  + Xử lý tại chỗ
+  + Sửa
+  + Xóa
+- Nếu sự cố đã chuyển sửa chữa thì không cho chuyển lại.
+- Nếu sự cố đã xử lý tại chỗ thì không cho chuyển sửa chữa.
+
+2) Luồng Sự cố -> Sửa chữa
+- Khi bấm Chuyển sửa chữa, hệ thống tạo phiếu sửa chữa mới và tự đổi:
+  + incident.status = Đã chuyển sửa chữa
+  + device.status = Chờ sửa chữa
+  + repair.processing_status = Mới tiếp nhận
+- Thêm liên kết repairs.incident_id để biết phiếu sửa chữa phát sinh từ sự cố nào.
+- Một sự cố chỉ được chuyển thành một phiếu sửa chữa một lần.
+
+3) Module Sửa chữa
+- Lịch sử xử lý chỉ giữ ở module Sửa chữa.
+- Phiếu sửa chữa được tạo từ sự cố sẽ có incident_id để truy vết nguồn gốc.
+
+4) Mã thiết bị và Mã bảo hiểm
+- Mã thiết bị tiếp tục theo dạng kỹ thuật: C7.MRI.0001, C7.CT.0001, C2.SH.0001...
+- Mã bảo hiểm không còn hiển thị ở bảng ngang danh sách thiết bị và báo cáo.
+- Mã bảo hiểm chỉ hiển thị trong phần Thông tin chung của từng hồ sơ thiết bị.
+- Form chi tiết thiết bị vẫn cho sửa Mã bảo hiểm.
+
+5) Cách test nhanh
+- Mở tab Sự cố.
+- Tạo sự cố mới -> bảng phải hiện trạng thái Mới ghi nhận.
+- Bấm Xử lý tại chỗ -> trạng thái chuyển thành Đã xử lý tại chỗ.
+- Tạo sự cố khác -> bấm Chuyển sửa chữa -> trạng thái chuyển thành Đã chuyển sửa chữa.
+- Bấm Chuyển sửa chữa lần nữa trên cùng sự cố -> không được tạo trùng.
+- Mở tab Sửa chữa -> thấy phiếu sửa chữa mới.
+- Mở danh sách thiết bị -> không còn cột Mã bảo hiểm.
+- Mở hồ sơ một thiết bị -> Mã bảo hiểm vẫn nằm trong Thông tin chung.
+
+Lưu ý:
+- Không xóa database cũ.
+- Server có migration tự thêm cột repairs.incident_id nếu database cũ chưa có.

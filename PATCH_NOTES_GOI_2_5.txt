@@ -1,0 +1,52 @@
+GÓI 2-5 - Hoàn thiện phần mềm TTBYT BV Quân y 4
+
+Đã cập nhật:
+1. Chuẩn hóa trạng thái sự cố:
+   - Mới ghi nhận, Đang xác minh, Chuyển sửa chữa, Đang xử lý, Đã xử lý, Đóng, Hủy.
+   - Ghi lịch sử khi tạo mới, cập nhật, đổi trạng thái, chuyển sửa chữa, xóa.
+   - Thêm API POST /api/incidents/:id/transfer-repair để chuyển sự cố sang sửa chữa có xác nhận.
+
+2. Chuẩn hóa sửa chữa:
+   - Mới tiếp nhận, Đang kiểm tra, Chờ linh kiện, Đang sửa chữa, Đã sửa xong, Bàn giao sử dụng, Không sửa được, Hủy.
+   - Sửa lỗi thiếu processing_status ở PUT /api/repairs/:id.
+   - Đổi ngày sửa chữa thành thời gian sửa chữa.
+
+3. Bảo dưỡng:
+   - Bảng bảo dưỡng có cột file đính kèm.
+   - Nếu chưa có file hiển thị “Chưa có”.
+   - Form bảo dưỡng dùng thời gian bảo dưỡng datetime-local.
+   - File bảo dưỡng lưu vào maintenances và đồng thời lưu sang Hồ sơ/Tài liệu.
+
+4. Kiểm định:
+   - Đổi ngày thực hiện thành thời gian thực hiện.
+   - Form dùng datetime-local.
+
+5. Mã thiết bị:
+   - Không dùng serial làm mã thiết bị nữa.
+   - Thêm device_code và insurance_code.
+   - Tự sinh mã thiết bị dạng QY4-[Mã khoa]-[Mã nhóm]-0001.
+   - Chuyển dữ liệu serial cũ sang mã bảo hiểm nếu insurance_code còn trống.
+   - Serial hãng có thể để trống.
+
+6. Hồ sơ thiết bị:
+   - Bố cục lại Thông tin chung thành 4 nhóm: Định danh, Kỹ thuật, Quản lý sử dụng, Tài chính/tình trạng.
+   - Các bảng con gọn hơn, hiển thị thời gian đầy đủ hơn.
+   - Bảo dưỡng trong hồ sơ thiết bị có thể upload file.
+
+7. Báo cáo:
+   - Bỏ báo cáo thực lực ở giao diện chính.
+   - Thêm các báo cáo: sắp hết bảo hành, quá hạn bảo dưỡng, quá hạn kiểm định, sửa chữa nhiều lần, chi phí theo khoa/phòng, đề nghị thay thế/thanh lý, tỷ lệ trạng thái.
+   - Có bộ lọc khoa/phòng, nhóm thiết bị, tìm kiếm và xuất Excel.
+
+Cách test nhanh:
+1. Chạy: npm install rồi npm start.
+2. Mở /tickets.html: tạo sự cố, sửa, xem lịch sử, chuyển sửa chữa.
+3. Mở /maintenance.html: kiểm tra phiếu sửa chữa vừa tạo, đổi trạng thái, xem lịch sử.
+4. Mở /inspection.html: thêm bảo dưỡng kèm file, tải file.
+5. Mở /inspections.html: thêm kiểm định với thời gian thực hiện.
+6. Mở /device-detail.html?id=1: kiểm tra Mã thiết bị, Mã bảo hiểm, Serial hãng và các khung hồ sơ.
+7. Mở /reports.html: chọn từng loại báo cáo và xuất Excel.
+
+Lưu ý:
+- Không xóa database cũ. Server tự migration thêm cột device_code và insurance_code.
+- Nên backup thư mục db/ trước khi chạy trên máy thật.

@@ -1,0 +1,7 @@
+Bản v28: Đã thiết kế lại giao diện theo phong cách chuyên nghiệp hơn:
+- Đổi font chữ Times New Roman sang Segoe UI/Inter hiện đại.
+- Làm mới sidebar, logo, menu active.
+- Làm header cố định, card bo góc, đổ bóng nhẹ.
+- Làm lại bảng dữ liệu: header rõ, hover row, zebra row.
+- Làm lại input, button, trạng thái, dashboard card.
+- Tối ưu riêng màn hình Cài đặt để đỡ rối và dễ đọc hơn.

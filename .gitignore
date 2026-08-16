@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Uploads
+uploads/
+
+# Environment
+.env
+
+# Logs
+*.log
+
+# MacOS
+.DS_Store
+
+# Database
+db/*.sqlite
+db/*.db
+
+# VSCode
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini

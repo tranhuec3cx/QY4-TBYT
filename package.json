@@ -1,0 +1,19 @@
+{
+  "name": "qy4-ttbyt-bao-cao-hoi-dong-khoa",
+  "version": "5.0.0-stable-report",
+  "private": true,
+  "description": "Bản V5.0 hoàn thiện giao diện, nghiệp vụ, QR và trung tâm báo cáo - QY4 TTBYT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.2",
+    "xlsx": "^0.18.5",
+    "multer": "^1.4.5-lts.1",
+    "exceljs": "^4.4.0",
+    "qrcode": "^1.5.4"
+  }
+}
