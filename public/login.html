@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập - QY4 TTBYT</title>
+  <style>
+    *{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fa;color:#17324d;min-height:100vh;display:grid;place-items:center;padding:24px}
+    .box{width:min(440px,100%);background:#fff;border:1px solid #d8e1eb;border-radius:16px;padding:30px;box-shadow:0 12px 35px rgba(23,50,77,.10)}
+    .eyebrow{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#607d98}.title{margin:8px 0 4px;font-size:26px}.sub{margin:0 0 24px;color:#60758a;line-height:1.5}
+    label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px} input{width:100%;padding:12px 13px;border:1px solid #bdcbd9;border-radius:9px;font-size:15px;outline:none} input:focus{border-color:#47779e;box-shadow:0 0 0 3px rgba(71,119,158,.12)}
+    button{width:100%;margin-top:20px;padding:12px;border:0;border-radius:9px;background:#244f72;color:white;font-size:15px;font-weight:700;cursor:pointer} button:disabled{opacity:.6;cursor:wait}
+    .error{display:none;margin-top:14px;padding:10px 12px;border-radius:8px;background:#fff0f0;color:#9e2525;font-size:13px;line-height:1.4}.note{margin-top:20px;padding-top:16px;border-top:1px solid #e2e8ef;color:#667b8e;font-size:12px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <main class="box">
+    <div class="eyebrow">Bệnh viện Quân y 4</div>
+    <h1 class="title">QUẢN LÝ TTBYT</h1>
+    <p class="sub">Đăng nhập để truy cập dữ liệu trang thiết bị y tế.</p>
+    <form id="loginForm">
+      <label for="username">Tài khoản</label>
+      <input id="username" autocomplete="username" required autofocus />
+      <label for="password">Mật khẩu</label>
+      <input id="password" type="password" autocomplete="current-password" required />
+      <button id="loginBtn" type="submit">Đăng nhập</button>
+      <div id="errorBox" class="error"></div>
+    </form>
+    <div class="note">Lần chạy đầu tiên, mật khẩu tạm thời của tài khoản quản trị được hiển thị trong cửa sổ chạy phần mềm nếu chưa cấu hình <b>ADMIN_INITIAL_PASSWORD</b>. Hệ thống bắt buộc đổi mật khẩu sau lần đăng nhập đầu.</div>
+  </main>
+  <script>
+    const form=document.getElementById('loginForm'), errorBox=document.getElementById('errorBox'), btn=document.getElementById('loginBtn');
+    function showError(v){errorBox.textContent=v;errorBox.style.display='block'}
+    form.addEventListener('submit', async e=>{
+      e.preventDefault(); errorBox.style.display='none'; btn.disabled=true;
+      try{
+        const res=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('username').value.trim(),password:document.getElementById('password').value})});
+        const data=await res.json().catch(()=>({}));
+        if(!res.ok) throw new Error(data.error||'Không đăng nhập được.');
+        if(Number(data.user?.must_change_password||0)){location.href='/change-password.html';return;}
+        const raw=new URLSearchParams(location.search).get('next')||'/index.html';
+        const next=raw.startsWith('/')&&!raw.startsWith('//')?raw:'/index.html'; location.href=next;
+      }catch(err){showError(err.message||String(err));}finally{btn.disabled=false;}
+    });
+  </script>
+</body>
+</html>
