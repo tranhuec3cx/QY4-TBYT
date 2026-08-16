@@ -118,7 +118,7 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
     source,
     'soft cancel inspection',
     'app.delete("/api/inspections/:id", (req, res) => {\n  db.prepare("DELETE FROM inspections WHERE id=?").run(req.params.id);\n  res.json({ ok: true });\n});',
-    'app.delete("/api/inspections/:id", (req, res) => {\n  const old = db.prepare("SELECT * FROM inspections WHERE id=?").get(req.params.id);\n  if (!old) return res.status(404).json({ error: "Không tìm thấy hồ sơ kiểm định." });\n  const reason = String(req.body?.reason || "Hủy hồ sơ nhập nhầm").trim();\n  db.prepare("UPDATE inspections SET cancelled_at=?, cancel_reason=? WHERE id=?").run(nowSql(), reason, req.params.id);\n  writeHistory("inspection", Number(req.params.id), old.organization || "Khoa Trang bị", "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  logAudit("inspection", Number(req.params.id), "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  res.json({ ok: true });\n});'
+    'app.delete("/api/inspections/:id", (req, res) => {\n  const old = db.prepare("SELECT * FROM inspections WHERE id=?").get(req.params.id);\n  if (!old) return res.status(404).json({ error: "Không tìm thấy hồ sơ kiểm định." });\n  const reason = String(req.body?.reason || "Hủy hồ sơ nhập nhầm").trim();\n  db.prepare("UPDATE inspections SET cancelled_at=?, cancel_reason=? WHERE id=?").run(nowSql(), reason, req.params.id);\n  writeHistory("inspection", Number(req.params.id), old.organization || "Khoa Trang bị", "Hủy hồ sơ", old.result || "", "Đã hủy", reason);\n  logAudit("inspection", Number(req.params.id), "Hủy hồ sơ", reason);\n  res.json({ ok: true });\n});'
   );
   source = replaceRequired(
     source,
