@@ -70,13 +70,13 @@ vm.runInContext(fixSource, context);
 
 const data = {
   devices: [
-    { id:1, device_code:'C2.SH.0001', name:'Máy sinh hóa 1', department_code:'C2', group_code:'SH', status:'Đang hoạt động', cost:100 },
+    { id:1, device_code:'C2.SH.0001', name:'Máy sinh hóa 1', department_code:'C2', group_code:'SH', status:'Đang hoạt động', cost:100, funding:'Ngân sách Quốc phòng' },
     { id:2, device_code:'C2.HH.0001', name:'Máy huyết học', department_code:'C2', group_code:'HH', status:'Ngừng hoạt động', cost:200 },
     { id:3, device_code:'A10.SH.0001', name:'Máy sinh hóa A10', department_code:'A10', group_code:'SH', status:'Hoạt động hạn chế', cost:300 },
     { id:4, device_code:'C2.SH.0002', name:'Máy sinh hóa 2', department_code:'C2', group_code:'SH', status:'Chờ sửa chữa', cost:400 }
   ],
   repairs: [
-    { id:1, device_id:1, repair_date:'2026-08-01', received_at:'2026-08-01', device_code:'C2.SH.0001', device_name:'Máy sinh hóa 1', department_code:'C2', cost:10, processing_status:'Đã hoàn thành' },
+    { id:1, device_id:1, repair_date:'2025-12-31', received_at:'2026-08-01', device_code:'C2.SH.0001', device_name:'Máy sinh hóa 1', department_code:'C2', cost:10, processing_status:'Đã hoàn thành' },
     { id:2, device_id:2, repair_date:'2026-08-02', received_at:'2026-08-02', device_code:'C2.HH.0001', device_name:'Máy huyết học', department_code:'C2', cost:20, processing_status:'Đã hoàn thành' },
     { id:3, device_id:3, repair_date:'2026-08-03', received_at:'2026-08-03', device_code:'A10.SH.0001', device_name:'Máy sinh hóa A10', department_code:'A10', cost:30, processing_status:'Đã hoàn thành' }
   ],
@@ -114,22 +114,30 @@ assert.strictEqual(repairCost.rows.length, 1, 'Chi phí sửa chữa phải tuâ
 assert.strictEqual(repairCost.rows[0][3], 1);
 assert.strictEqual(repairCost.rows[0][4], 10);
 
+const repairs = run(`reportData('repairs')`);
+assert.strictEqual(repairs.rows.length, 1, 'Ngày tiếp nhận phải được ưu tiên khi lọc sửa chữa thay vì ngày kỹ thuật cũ');
+
 const due = run(`reportData('maintenanceDue')`);
 assert.strictEqual(due.rows.length, 1, 'Báo cáo đến hạn bảo dưỡng chỉ lấy thiết bị trong phạm vi lọc');
 assert.strictEqual(due.rows[0][5], '01/09/2026', 'Phải lấy hạn của bản ghi bảo dưỡng mới nhất theo ngày thực hiện');
 
 const replace = run(`reportData('devicesNeedReplace')`);
 assert.ok(replace.rows.every(r => r.length === replace.columns.length), 'Số cột và dữ liệu devicesNeedReplace phải khớp nhau');
+const deviceList = run(`reportData('deviceListTemplate')`);
+assert.ok(deviceList.rows.every(r => r.length === deviceList.columns.length), 'Danh sách thiết bị không được dư cột dữ liệu');
+const cqy = run(`reportData('cqySupplied')`);
+assert.strictEqual(cqy.rows.length, 1, 'Fixture phải có một thiết bị nguồn Quốc phòng');
+assert.ok(cqy.rows.every(r => r.length === cqy.columns.length), 'Danh sách Cục Quân y cấp hiện vật không được dư cột dữ liệu');
 
 const annual = run(`reportData('annualUsage')`);
 assert.strictEqual(annual.rows.length, 1);
 assert.strictEqual(annual.rows[0][2], 2, 'C2 + SH có 2 thiết bị');
 assert.strictEqual(annual.rows[0][3], 1, 'Đang sử dụng chỉ có 1 thiết bị hoạt động');
 assert.strictEqual(annual.rows[0][4], 1, 'Chờ sửa chữa phải được tính là không sử dụng');
-assert.strictEqual(annual.rows[0][5], 1, 'Sửa chữa trong năm phải theo đúng phạm vi lọc');
+assert.strictEqual(annual.rows[0][5], 1, 'Sửa chữa trong năm phải theo ngày tiếp nhận và đúng phạm vi lọc');
 
 run(`CURRENT_COLUMNS=['A']; CURRENT=[[1]]; CURRENT_TITLE='Báo cáo thử'; exportExcel();`);
 assert.strictEqual(xlsxCalls.length, 1, 'Xuất Excel báo cáo đang xem phải gọi XLSX.writeFile');
 assert.ok(xlsxCalls[0].endsWith('_2026-08-17.xlsx'));
 
-console.log('[P3 REPORT] PASS - lọc khoa/nhóm, trạng thái, hạn gần nhất và xuất Excel đã đúng logic.');
+console.log('[P3 REPORT] PASS - lọc khoa/nhóm, trạng thái, ngày tiếp nhận, hạn gần nhất, căn cột và xuất Excel đã đúng logic.');
