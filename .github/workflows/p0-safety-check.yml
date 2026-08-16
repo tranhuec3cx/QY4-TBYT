@@ -1,4 +1,4 @@
-name: Safety Check P0-P1
+name: Safety Check P0-P2
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
     branches:
       - fix/p0-safety
       - fix/p1-incident-repair
+      - fix/p2-auth-audit
 
 jobs:
   safety-check:
@@ -17,5 +18,5 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Verify P0-P1 source hardening
+      - name: Verify P0-P2 source hardening
         run: npm run check:safety
