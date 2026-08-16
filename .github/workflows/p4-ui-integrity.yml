@@ -5,6 +5,7 @@ on:
     paths:
       - 'public/**'
       - 'test-p4-ui.js'
+      - 'test-p4-role-ui.js'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/p4-ui-integrity.yml'
@@ -27,3 +28,5 @@ jobs:
         run: npm ci
       - name: P4 UI integrity test
         run: npm run test:p4:ui
+      - name: P4 role-aware UI test
+        run: npm run test:p4:role
