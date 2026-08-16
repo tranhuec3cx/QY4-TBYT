@@ -1,6 +1,19 @@
 (() => {
   const nativeFetch = window.fetch.bind(window);
+
+  function scopeIncidentMultipartUrl(input, options) {
+    if (typeof input !== "string" || !(options?.body instanceof FormData)) return input;
+    const u = new URL(input, window.location.origin);
+    if (!/^\/api\/incidents(?:\/\d+)?$/.test(u.pathname)) return input;
+    const deviceId = String(options.body.get("device_id") || "").trim();
+    if (!deviceId) return input;
+    u.searchParams.set("device_id", deviceId);
+    return u.pathname + u.search + u.hash;
+  }
+
   window.fetch = async (...args) => {
+    const [input, options] = args;
+    args[0] = scopeIncidentMultipartUrl(input, options);
     const res = await nativeFetch(...args);
     if (res.status === 401) {
       const next = encodeURIComponent(window.location.pathname + window.location.search);
