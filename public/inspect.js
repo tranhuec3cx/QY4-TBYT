@@ -1,4 +1,5 @@
 let PUBLIC_DEVICE = null;
+let PUBLIC_QR = null;
 
 function publicParam(name) {
   return new URLSearchParams(window.location.search).get(name);
@@ -30,14 +31,24 @@ function renderPublicDevice() {
 async function loadPublicDevice() {
   const id = publicParam("id") || publicParam("device_id");
   const code = publicParam("code") || publicParam("device_code");
+  const token = publicParam("token") || publicParam("t");
   if (!id && !code) {
     q("publicDeviceCard").innerHTML = '<div class="center-empty">Thiếu mã thiết bị trên đường dẫn QR.</div>';
     q("publicCheckForm").style.display = "none";
     return;
   }
+  if (!token) {
+    q("publicDeviceCard").innerHTML = '<div class="center-empty">Mã QR này chưa có chữ ký bảo mật hoặc đã quá cũ. Vui lòng liên hệ Khoa Trang bị để in lại mã QR.</div>';
+    q("publicCheckForm").style.display = "none";
+    return;
+  }
+
+  const kind = id ? "id" : "code";
+  const key = String(id || code);
+  PUBLIC_QR = { kind, key, token: String(token) };
   const endpoint = id
-    ? `/api/public/device/${encodeURIComponent(id)}`
-    : `/api/public/device-code/${encodeURIComponent(code)}`;
+    ? `/api/public/device/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`
+    : `/api/public/device-code/${encodeURIComponent(code)}?token=${encodeURIComponent(token)}`;
   PUBLIC_DEVICE = await api(endpoint);
   renderPublicDevice();
 }
@@ -63,7 +74,7 @@ function validatePublicMedia() {
 }
 async function postPublicCheck(e) {
   e.preventDefault();
-  if (!PUBLIC_DEVICE) return;
+  if (!PUBLIC_DEVICE || !PUBLIC_QR) return;
   const condition = publicCondition();
   const description = q("publicDescription").value.trim();
   if (condition === "Có vấn đề" && !description) {
@@ -77,6 +88,7 @@ async function postPublicCheck(e) {
   btn.textContent = "Đang gửi...";
   try {
     const fd = new FormData();
+    // device_id chỉ để tương thích giao diện; backend P7 dùng thiết bị đã xác minh từ chữ ký QR.
     fd.append("device_id", PUBLIC_DEVICE.id);
     fd.append("inspector", q("publicInspector").value.trim().slice(0, 120));
     fd.append("reporter_phone", q("publicPhone").value.trim().slice(0, 40));
@@ -87,7 +99,12 @@ async function postPublicCheck(e) {
     fd.append("create_incident", condition === "Có vấn đề" ? "1" : "0");
     Array.from(q("publicMedia")?.files || []).forEach(f => fd.append("media", f));
 
-    const res = await fetch("/api/qr/checks", { method: "POST", body: fd });
+    const query = new URLSearchParams({
+      qr_kind: PUBLIC_QR.kind,
+      qr_key: PUBLIC_QR.key,
+      token: PUBLIC_QR.token
+    });
+    const res = await fetch(`/api/qr/checks?${query.toString()}`, { method: "POST", body: fd });
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
     q("publicCheckForm").innerHTML = `
