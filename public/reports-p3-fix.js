@@ -2,7 +2,7 @@
   const p3OriginalReportData = reportData;
 
   function p3Status(value) {
-    return norm(value).replace(/\s+/g, ' ').trim();
+    return norm(value).replace(/đ/g, 'd').replace(/\s+/g, ' ').trim();
   }
   function p3IsFullyActive(value) {
     const s = p3Status(value);
