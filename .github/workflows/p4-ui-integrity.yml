@@ -6,6 +6,7 @@ on:
       - 'public/**'
       - 'test-p4-ui.js'
       - 'test-p4-role-ui.js'
+      - 'test-p4-dashboard.js'
       - 'package.json'
       - 'package-lock.json'
       - '.github/workflows/p4-ui-integrity.yml'
@@ -30,3 +31,5 @@ jobs:
         run: npm run test:p4:ui
       - name: P4 role-aware UI test
         run: npm run test:p4:role
+      - name: P4 dashboard role test
+        run: npm run test:p4:dashboard
