@@ -3,25 +3,6 @@ let META = { departments: [], groups: [] };
 let DEVICES = [];
 let FILTERED = [];
 
-
-function extractSerialFromHisCode(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  const parts = raw.split('.').map(x => x.trim()).filter(Boolean);
-  const idx = parts.findIndex(x => x === '40026');
-  if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
-  if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1])) return parts[parts.length - 1];
-  const m = raw.match(/40026[.\-_/ ]+(\d+)$/);
-  return m ? m[1] : '';
-}
-function autoFillSerialFromHis() {
-  const his = q('insuranceInput')?.value || '';
-  const serialInput = q('serialInput');
-  if (!serialInput) return;
-  const sn = extractSerialFromHisCode(his);
-  if (sn && !String(serialInput.value || '').trim()) serialInput.value = sn;
-}
-
 function byId(id) { return DEVICES.find(x => x.id === id); }
 function departmentName(code) { return META.departments.find(x => x.code === code)?.name || code; }
 function groupName(code) { return META.groups.find(x => x.code === code)?.name || code; }
@@ -99,9 +80,13 @@ function editDevice(id) {
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 }
 async function deleteDevice(id) {
-  if (!confirm("Xóa thiết bị này?")) return;
-  await api(`/api/devices/${id}`, { method: "DELETE" });
-  await loadData();
+  if (!confirm("Xóa thiết bị này? Chỉ thiết bị chưa phát sinh lịch sử mới có thể xóa.")) return;
+  try {
+    await api(`/api/devices/${id}`, { method: "DELETE" });
+    await loadData();
+  } catch (e) {
+    alert(e?.message || "Không thể xóa thiết bị.");
+  }
 }
 function resetForm() {
   q("deviceForm").reset();
@@ -116,7 +101,8 @@ async function saveDevice(e) {
     manufacturer: q("manufacturerInput").value.trim(),
     model: q("modelInput").value.trim(),
     insurance_code: q("insuranceInput").value.trim(),
-    serial: q("serialInput").value.trim() || extractSerialFromHisCode(q("insuranceInput").value),
+    // Serial Number của hãng là trường độc lập. Tuyệt đối không tự suy từ mã HIS/BHXH.
+    serial: q("serialInput").value.trim(),
     country: q("countryInput").value.trim(),
     year_manufactured: Number(q("yearManufacturedInput").value || 0),
     year_in_use: Number(q("yearUseInput").value || 0),
@@ -129,11 +115,15 @@ async function saveDevice(e) {
     note: q("noteInput").value.trim()
   };
   const id = q("deviceId").value;
-  if (id) await api(`/api/devices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-  else await api(`/api/devices`, { method: "POST", body: JSON.stringify(payload) });
-  resetForm();
-  await loadData();
-  alert("Đã lưu thiết bị.");
+  try {
+    if (id) await api(`/api/devices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    else await api(`/api/devices`, { method: "POST", body: JSON.stringify(payload) });
+    resetForm();
+    await loadData();
+    alert("Đã lưu thiết bị.");
+  } catch (e) {
+    alert(e?.message || "Không lưu được thiết bị.");
+  }
 }
 function exportDevices() {
   const rows = [["Mã thiết bị","Tên thiết bị","Nhóm","Khoa/Phòng","Hãng SX","Model","Năm SD","Hạn BH","Tình trạng","Cấp chất lượng","Serial","Nước sản xuất","Năm sản xuất","Nguyên giá","Nguồn kinh phí","Vị trí","Ghi chú"]];
@@ -158,7 +148,7 @@ async function loadData() {
 }
 document.addEventListener("DOMContentLoaded", async () => {
   setLayout("devices","Thiết bị","Quản lý hồ sơ thiết bị, Serial Number, khoa sử dụng và tình trạng");
-  applyFieldLabels("deviceForm", {departmentInput:"Khoa sử dụng",groupInput:"Nhóm thiết bị",nameInput:"Tên thiết bị",manufacturerInput:"Hãng sản xuất",modelInput:"Model",insuranceInput:"Mã bảo hiểm",serialInput:"Serial hãng",countryInput:"Nước sản xuất",yearManufacturedInput:"Năm sản xuất",yearUseInput:"Năm sử dụng",warrantyInput:"Hạn bảo hành",statusInput:"Tình trạng",qualityInput:"Cấp chất lượng",costInput:"Nguyên giá",fundingInput:"Nguồn kinh phí",locationInput:"Vị trí đặt máy",noteInput:"Ghi chú"});
+  applyFieldLabels("deviceForm", {departmentInput:"Khoa sử dụng",groupInput:"Nhóm thiết bị",nameInput:"Tên thiết bị",manufacturerInput:"Hãng sản xuất",modelInput:"Model",insuranceInput:"Mã máy BHXH / mã quản lý",serialInput:"Serial Number của hãng",countryInput:"Nước sản xuất",yearManufacturedInput:"Năm sản xuất",yearUseInput:"Năm sử dụng",warrantyInput:"Hạn bảo hành",statusInput:"Tình trạng",qualityInput:"Cấp chất lượng",costInput:"Nguyên giá",fundingInput:"Nguồn kinh phí",locationInput:"Vị trí đặt máy",noteInput:"Ghi chú"});
   await loadData();
   q("filterBtn").onclick = applyFilters;
   q("resetBtn").onclick = () => {
@@ -173,18 +163,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
   ["searchInput","departmentFilter","groupFilter","yearFilter","statusFilter","qualityFilter","fundingFilter"].forEach(id => q(id).addEventListener(id==="searchInput"?"input":"change", applyFilters));
   q("deviceForm").addEventListener("submit", saveDevice);
-  if (q("insuranceInput")) q("insuranceInput").addEventListener("input", autoFillSerialFromHis);
   q("exportBtn")?.addEventListener("click", exportDevices);
   if (q("exportExcelBtn")) q("exportExcelBtn").onclick = exportDevicesExcel;
 });
 
-
 function exportDevicesExcel() {
   exportA4Report('devices', { deptId: 'departmentFilter', groupId: 'groupFilter' });
 }
-
-
-
 
 function resolveDepartmentCodeFromExcel(raw) {
   const s = String(raw || "").trim();
@@ -205,7 +190,6 @@ function resolveGroupCodeFromExcel(raw) {
   const byName = META.groups.find(g => g.name === s);
   return byName ? byName.code : "";
 }
-
 
 function reportFileStamp() {
   const d = new Date();
