@@ -65,6 +65,12 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
   let source = value;
   source = replaceRequired(
     source,
+    'trust proxy default',
+    'app.set("trust proxy", true);',
+    'app.set("trust proxy", require("./proxy-config").trustProxySetting(process.env.TRUST_PROXY));'
+  );
+  source = replaceRequired(
+    source,
     'production seed scope',
     '  users.forEach(r => insertUser.run(...r));',
     '  const initialUsers = process.env.DEMO_MODE === "true" ? users : users.filter(r => r[1] === "admin");\n  initialUsers.forEach(r => insertUser.run(...r));\n  if (process.env.DEMO_MODE !== "true") return;'

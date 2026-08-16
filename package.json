@@ -19,7 +19,8 @@
     "test:p4:role": "node test-p4-role-ui.js",
     "test:p4:dashboard": "node test-p4-dashboard.js",
     "test:p4:scope": "node test-p4-dept-scope.js",
-    "test:p5:qr": "node test-p5-qr.js"
+    "test:p5:qr": "node test-p5-qr.js",
+    "test:p6:proxy": "node test-p6-proxy.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",

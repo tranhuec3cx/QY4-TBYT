@@ -1,0 +1,37 @@
+name: P6 Proxy Rate Limit
+
+on:
+  pull_request:
+    paths:
+      - 'proxy-config.js'
+      - 'p3-start.js'
+      - 'test-p6-proxy.js'
+      - '.env.example'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/p6-proxy-rate-limit.yml'
+  push:
+    branches:
+      - fix/p6-proxy-rate-limit
+
+jobs:
+  proxy-rate-limit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Zero production dependency vulnerabilities
+        run: npm audit --omit=dev
+      - name: Verify hardened source
+        run: npm run check:safety
+      - name: P6 trust proxy test
+        run: npm run test:p6:proxy
+      - name: Preserve P2 auth/rate-limit integration
+        run: npm run test:p2
