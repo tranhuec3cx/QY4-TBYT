@@ -26,7 +26,7 @@ const mustContain = [
   'QR công khai (tự khai)',
   'COALESCE(m.cancelled_at',
   'COALESCE(i.cancelled_at',
-  'public/p7-qr-client.js',
+  'p7-qr-client.js',
   '/vendor/xlsx.full.min.js',
   'device-detail-p3-fix.js'
 ];
