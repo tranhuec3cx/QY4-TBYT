@@ -7,6 +7,8 @@ const fixSource = fs.readFileSync('public/reports-p3-fix.js', 'utf8');
 const maintenanceSource = fs.readFileSync('public/inspection.js', 'utf8');
 const inspectionsSource = fs.readFileSync('public/inspections.js', 'utf8');
 const devicesSource = fs.readFileSync('public/devices.js', 'utf8');
+const deviceDetailFixSource = fs.readFileSync('public/device-detail-p3-fix.js', 'utf8');
+const p3StartSource = fs.readFileSync('p3-start.js', 'utf8');
 
 // Parse-only checks for the browser scripts touched in P3.
 new Function(reportSource);
@@ -14,9 +16,13 @@ new Function(fixSource);
 new Function(maintenanceSource);
 new Function(inspectionsSource);
 new Function(devicesSource);
+new Function(deviceDetailFixSource);
 assert.ok(!devicesSource.includes('extractSerialFromHisCode'), 'Màn hình thiết bị không được còn hàm suy Serial từ mã HIS/BHXH.');
 assert.ok(!devicesSource.includes('autoFillSerialFromHis'), 'Màn hình thiết bị không được tự điền Serial từ mã HIS/BHXH.');
 assert.ok(!devicesSource.includes('serialInput").value.trim() ||'), 'Payload thiết bị phải giữ Serial hãng độc lập, không fallback sang mã khác.');
+assert.ok(deviceDetailFixSource.includes('p3SaveGeneralStrictSerial'), 'Hồ sơ thiết bị phải có lớp cập nhật Serial độc lập.');
+assert.ok(deviceDetailFixSource.includes('p3CancelMaintenance') && deviceDetailFixSource.includes('p3CancelInspection'), 'Hồ sơ thiết bị phải dùng hủy mềm cho Bảo dưỡng/Kiểm định.');
+assert.ok(p3StartSource.includes("requestPath === '/device-detail.js'"), 'Runtime P3 phải phục vụ lớp đồng bộ cùng device-detail.js hiện hữu.');
 
 const controls = {
   deptFilter: { value: 'C2' },
@@ -145,4 +151,4 @@ run(`CURRENT_COLUMNS=['A']; CURRENT=[[1]]; CURRENT_TITLE='Báo cáo thử'; expo
 assert.strictEqual(xlsxCalls.length, 1, 'Xuất Excel báo cáo đang xem phải gọi XLSX.writeFile');
 assert.ok(xlsxCalls[0].endsWith('_2026-08-17.xlsx'));
 
-console.log('[P3 REPORT] PASS - Serial/BHXH độc lập; lọc khoa/nhóm, trạng thái, ngày tiếp nhận, hạn gần nhất, căn cột và xuất Excel đúng logic.');
+console.log('[P3 REPORT] PASS - Serial/BHXH độc lập ở danh sách + hồ sơ; vòng đời hủy mềm; lọc, trạng thái, ngày tiếp nhận, hạn gần nhất, căn cột và xuất Excel đúng logic.');
