@@ -34,21 +34,62 @@ jobs:
         run: test -f node_modules/exceljs/dist/xlsx.full.min.js
       - name: Integration test P2 auth and scope
         run: npm run test:p2
-      - name: Production startup smoke test
+      - name: Fresh production startup and seed isolation
         env:
           PORT: '5099'
           DEMO_MODE: 'false'
           ADMIN_INITIAL_PASSWORD: 'CI-Only-Strong-Password-5099'
         run: |
-          npm start > /tmp/qy4-server.log 2>&1 &
+          rm -rf db
+          node p3-start.js > /tmp/qy4-prod.log 2>&1 &
           PID=$!
           sleep 3
           if ! kill -0 "$PID" 2>/dev/null; then
-            cat /tmp/qy4-server.log
+            cat /tmp/qy4-prod.log
             exit 1
           fi
           curl -fsS http://127.0.0.1:5099/login.html > /tmp/qy4-login.html
           grep -q "Đăng nhập" /tmp/qy4-login.html
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database('db/qy4_ttbyt.sqlite', { readonly: true });
+          const devices = db.prepare('SELECT COUNT(*) c FROM devices').get().c;
+          const departments = db.prepare('SELECT COUNT(*) c FROM departments').get().c;
+          const users = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+          db.close();
+          if (devices !== 0) throw new Error(`Production DB trắng không được sinh thiết bị demo: ${devices}`);
+          if (departments < 1) throw new Error('Production phải có danh mục khoa/phòng nền.');
+          if (users !== 1) throw new Error(`Production ban đầu chỉ được có tài khoản admin: ${users}`);
+          console.log(`[P3 PROD] departments=${departments}, users=${users}, devices=${devices}`);
+          NODE
           kill "$PID"
           wait "$PID" 2>/dev/null || true
-          cat /tmp/qy4-server.log
+          cat /tmp/qy4-prod.log
+      - name: Fresh demo startup
+        env:
+          PORT: '5100'
+          DEMO_MODE: 'true'
+          ADMIN_INITIAL_PASSWORD: 'CI-Demo-Strong-Password-5100'
+        run: |
+          rm -rf db
+          node p3-start.js --demo > /tmp/qy4-demo.log 2>&1 &
+          PID=$!
+          sleep 3
+          if ! kill -0 "$PID" 2>/dev/null; then
+            cat /tmp/qy4-demo.log
+            exit 1
+          fi
+          curl -fsS http://127.0.0.1:5100/login.html > /tmp/qy4-demo-login.html
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database('db/qy4_ttbyt.sqlite', { readonly: true });
+          const devices = db.prepare('SELECT COUNT(*) c FROM devices').get().c;
+          const users = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+          db.close();
+          if (devices < 1) throw new Error('DEMO_MODE phải tạo bộ thiết bị mẫu.');
+          if (users < 2) throw new Error('DEMO_MODE phải tạo bộ người dùng mẫu.');
+          console.log(`[P3 DEMO] users=${users}, devices=${devices}`);
+          NODE
+          kill "$PID"
+          wait "$PID" 2>/dev/null || true
+          cat /tmp/qy4-demo.log
