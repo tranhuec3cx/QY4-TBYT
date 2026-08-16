@@ -305,9 +305,39 @@ function attach({ app, express, Database, dbPath, publicDir, uploadsDir, qrUploa
     res.json(rows);
   });
 
-  function publicApi(pathname) {
-    return pathname === "/qr/png" || pathname.startsWith("/qr/device/") || pathname.startsWith("/qr/device-code/") || pathname === "/qr/checks" || pathname.startsWith("/public/") || pathname === "/system/public-qr-check" || pathname === "/system/qr-origins";
-  }
+  // P5_SAFE_PUBLIC_DEVICE: QR công khai chỉ lộ tập thông tin tối thiểu cần để nhận diện máy.
+function publicDevicePayloadBy(field, value) {
+  if (!['id','device_code'].includes(field)) return null;
+  const row = db().prepare(`
+    SELECT dv.id,dv.device_code,dv.name,dv.department_code,d.name AS department_name,
+           dv.location,dv.status,dv.model
+    FROM devices dv
+    LEFT JOIN departments d ON d.code=dv.department_code
+    WHERE dv.${field}=?
+    LIMIT 1
+  `).get(value);
+  return row || null;
+}
+
+app.get("/api/public/device/:id", (req, res) => {
+  const id = Number(req.params.id || 0);
+  if (!id) return res.status(400).json({ error: "Mã thiết bị không hợp lệ." });
+  const row = publicDevicePayloadBy('id', id);
+  if (!row) return res.status(404).json({ error: "Không tìm thấy thiết bị." });
+  res.json(row);
+});
+
+app.get("/api/public/device-code/:code", (req, res) => {
+  const code = String(req.params.code || '').trim().slice(0, 120);
+  if (!code) return res.status(400).json({ error: "Thiếu mã thiết bị." });
+  const row = publicDevicePayloadBy('device_code', code);
+  if (!row) return res.status(404).json({ error: "Không tìm thấy thiết bị." });
+  res.json(row);
+});
+
+function publicApi(pathname) {
+  return pathname === "/qr/checks" || pathname.startsWith("/public/");
+}
 
   function qrPostRateAllowed(req) {
     if (req.method !== "POST" || req.path !== "/qr/checks") return true;

@@ -21,7 +21,7 @@ function renderPublicDevice() {
     </div>
     <div class="public-info-grid">
       <div><span>Mã thiết bị</span><b>${publicEsc(d.device_code || "—")}</b></div>
-      <div><span>Khoa/Phòng</span><b>${publicEsc(d.department_name || "—")}</b></div>
+      <div><span>Khoa/Phòng</span><b>${publicEsc(d.department_name || d.department_code || "—")}</b></div>
       <div><span>Vị trí</span><b>${publicEsc(d.location || "—")}</b></div>
       <div><span>Model</span><b>${publicEsc(d.model || "—")}</b></div>
     </div>
@@ -29,12 +29,16 @@ function renderPublicDevice() {
 }
 async function loadPublicDevice() {
   const id = publicParam("id") || publicParam("device_id");
-  if (!id) {
+  const code = publicParam("code") || publicParam("device_code");
+  if (!id && !code) {
     q("publicDeviceCard").innerHTML = '<div class="center-empty">Thiếu mã thiết bị trên đường dẫn QR.</div>';
     q("publicCheckForm").style.display = "none";
     return;
   }
-  PUBLIC_DEVICE = await api(`/api/public/device/${encodeURIComponent(id)}`);
+  const endpoint = id
+    ? `/api/public/device/${encodeURIComponent(id)}`
+    : `/api/public/device-code/${encodeURIComponent(code)}`;
+  PUBLIC_DEVICE = await api(endpoint);
   renderPublicDevice();
 }
 function updatePublicForm() {
@@ -74,11 +78,11 @@ async function postPublicCheck(e) {
   try {
     const fd = new FormData();
     fd.append("device_id", PUBLIC_DEVICE.id);
-    fd.append("inspector", q("publicInspector").value.trim());
-    fd.append("reporter_phone", q("publicPhone").value.trim());
+    fd.append("inspector", q("publicInspector").value.trim().slice(0, 120));
+    fd.append("reporter_phone", q("publicPhone").value.trim().slice(0, 40));
     fd.append("condition", condition);
-    fd.append("description", description);
-    fd.append("note", q("publicNote").value.trim());
+    fd.append("description", description.slice(0, 2000));
+    fd.append("note", q("publicNote").value.trim().slice(0, 2000));
     fd.append("severity", "Trung bình");
     fd.append("create_incident", condition === "Có vấn đề" ? "1" : "0");
     Array.from(q("publicMedia")?.files || []).forEach(f => fd.append("media", f));

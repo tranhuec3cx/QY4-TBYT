@@ -132,6 +132,21 @@ fs.readFileSync = function qy4ReadFileSync(target, ...args) {
     'FROM inspections ins LEFT JOIN devices dv ON dv.id=ins.device_id WHERE 1=1 ${dw.sql}',
     'FROM inspections ins LEFT JOIN devices dv ON dv.id=ins.device_id WHERE COALESCE(ins.cancelled_at,\'\')=\'\' ${dw.sql}'
   );
+
+  // P5: dữ liệu nhập từ QR công khai là dữ liệu tự khai, không phải danh tính đã xác minh.
+  // Giới hạn độ dài ở server và đánh dấu nguồn ngay trong trường người kiểm tra/người báo.
+  source = replaceRequired(
+    source,
+    'public QR self-declared actor',
+    '    const inspector = String(p.inspector || "").trim();\n    const reporterPhone = String(p.reporter_phone || "").trim();',
+    '    const inspectorInput = String(p.inspector || "").trim().slice(0, 120);\n    const inspector = inspectorInput ? `QR công khai (tự khai) - ${inspectorInput}` : "";\n    const reporterPhone = String(p.reporter_phone || "").trim().slice(0, 40);'
+  );
+  source = replaceRequired(
+    source,
+    'public QR text limits',
+    '    const normalizedCondition = condition === "Tốt" ? "Bình thường" : condition;\n    if (!["Bình thường", "Có vấn đề"].includes(normalizedCondition)) return res.status(400).json({ error: "Tình trạng kiểm tra không hợp lệ." });\n    const description = String(p.description || "").trim();',
+    '    const normalizedCondition = condition === "Tốt" ? "Bình thường" : condition;\n    if (!["Bình thường", "Có vấn đề"].includes(normalizedCondition)) return res.status(400).json({ error: "Tình trạng kiểm tra không hợp lệ." });\n    const description = String(p.description || "").trim().slice(0, 2000);\n    p.note = String(p.note || "").trim().slice(0, 2000);'
+  );
   return source;
 };
 
