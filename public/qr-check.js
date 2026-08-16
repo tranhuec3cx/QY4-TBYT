@@ -1,38 +1,45 @@
 let QR_DEVICE = null;
+let QR_AUTH = null;
+
 function getParam(name){ return new URLSearchParams(window.location.search).get(name); }
 function qrEsc(v){ return String(v ?? "").replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[ch])); }
-function latestLabel(row, dateField, emptyText){
-  if(!row) return emptyText;
-  const d = row[dateField] || row.next_date || "";
-  const detail = [row.type, row.result].filter(Boolean).join(" - ");
-  return `${formatDateTimeVN(d) || formatDateVN(d)}${detail ? ` (${qrEsc(detail)})` : ""}`;
-}
+function hideQrForm(){ const form=q("checkForm"); if(form) form.style.display="none"; }
+function showQrError(message){ q("deviceCard").innerHTML = `<div class="center-empty">${qrEsc(message)}</div>`; hideQrForm(); }
+
 function renderDevice(){
   const d = QR_DEVICE;
   q("deviceCard").innerHTML = `
     <div class="qr-device-title-row">
       <div class="qr-device-icon">▣</div>
-      <div><h2>${qrEsc(d.name)}</h2><p>${qrEsc(d.device_code)}</p></div>
+      <div><h2>${qrEsc(d.name)}</h2><p>${qrEsc(d.device_code || "—")}</p></div>
     </div>
     <div class="qr-info-list">
       <div><span>Khoa sử dụng</span><b>${qrEsc(d.department_name || d.department_code || "—")}</b></div>
       <div><span>Vị trí</span><b>${qrEsc(d.location || "—")}</b></div>
-      <div><span>Hãng / Model</span><b>${qrEsc([d.manufacturer, d.model].filter(Boolean).join(" - ") || "—")}</b></div>
-      <div><span>Serial</span><b>${qrEsc(d.serial || "—")}</b></div>
+      <div><span>Model</span><b>${qrEsc(d.model || "—")}</b></div>
       <div><span>Tình trạng</span><b><span class="tag ${statusTagClass(d.status)}">${qrEsc(d.status || "—")}</span></b></div>
-      <div><span>Bảo dưỡng gần nhất</span><b>${latestLabel(d.latest_maintenance, "maintenance_date", "Chưa có dữ liệu")}</b></div>
-      <div><span>Kiểm định gần nhất</span><b>${latestLabel(d.latest_inspection, "inspection_date", "Chưa có dữ liệu")}</b></div>
-      <div><span>Phiếu sửa chữa mở</span><b>${d.open_repair ? `#${d.open_repair.id} - ${qrEsc(d.open_repair.processing_status)}` : "Không có"}</b></div>
+      <div><span>Xác thực QR</span><b><span class="tag green">Hợp lệ</span></b></div>
     </div>
   `;
 }
+
 async function loadQrDevice(){
-  const id = getParam("device_id");
-  const code = getParam("code");
-  if(!id && !code){ q("deviceCard").innerHTML = '<div class="center-empty">Thiếu mã thiết bị trên đường dẫn QR.</div>'; return; }
-  QR_DEVICE = await api(id ? `/api/qr/device/${encodeURIComponent(id)}` : `/api/qr/device-code/${encodeURIComponent(code)}`);
+  const id = getParam("id") || getParam("device_id");
+  const code = getParam("code") || getParam("device_code");
+  const token = getParam("token") || getParam("t");
+  if(!id && !code){ showQrError("Thiếu mã thiết bị trên đường dẫn QR."); return; }
+  if(!token){ showQrError("Mã QR chưa có chữ ký bảo mật hoặc là nhãn cũ. Vui lòng liên hệ Khoa Trang bị để in lại QR."); return; }
+
+  const kind = id ? "id" : "code";
+  const key = String(id || code);
+  QR_AUTH = { kind, key, token: String(token) };
+  const endpoint = id
+    ? `/api/public/device/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`
+    : `/api/public/device-code/${encodeURIComponent(code)}?token=${encodeURIComponent(token)}`;
+  QR_DEVICE = await api(endpoint);
   renderDevice();
 }
+
 function conditionValue(){ return document.querySelector('input[name="condition"]:checked')?.value || "Bình thường"; }
 function updateCheckFormState(){
   const st = conditionValue();
@@ -64,18 +71,20 @@ async function sendMultipart(url, fields, fileInputId){
 }
 async function submitCheck(e){
   e.preventDefault();
-  if(!QR_DEVICE) return;
+  if(!QR_DEVICE || !QR_AUTH) return;
   const condition = conditionValue();
   const description = q("checkDescription").value.trim();
   if(condition === "Có vấn đề" && !description){ alert("Vui lòng nhập mô tả vấn đề."); return; }
   if(!validateQrFiles()) return;
-  const result = await sendMultipart("/api/qr/checks", {
+  const query = new URLSearchParams({ qr_kind: QR_AUTH.kind, qr_key: QR_AUTH.key, token: QR_AUTH.token });
+  const result = await sendMultipart(`/api/qr/checks?${query.toString()}`, {
+    // Chỉ giữ device_id để tương thích; backend P7 lấy ID tin cậy từ chữ ký QR.
     device_id: QR_DEVICE.id,
-    inspector: q("inspectorInput").value.trim(),
-    reporter_phone: q("phoneInput")?.value.trim() || "",
+    inspector: q("inspectorInput").value.trim().slice(0,120),
+    reporter_phone: q("phoneInput")?.value.trim().slice(0,40) || "",
     condition,
-    description,
-    note: q("checkNote").value.trim(),
+    description: description.slice(0,2000),
+    note: q("checkNote").value.trim().slice(0,2000),
     severity: "Trung bình",
     create_incident: condition === "Có vấn đề" ? "1" : "0"
   }, "checkFile");
@@ -88,5 +97,5 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.querySelectorAll('input[name="condition"]').forEach(x => x.addEventListener("change", updateCheckFormState));
   q("checkForm").addEventListener("submit", submitCheck);
   updateCheckFormState();
-  try { await loadQrDevice(); } catch(e){ q("deviceCard").innerHTML = `<div class="center-empty">${qrEsc(e.message || e)}</div>`; }
+  try { await loadQrDevice(); } catch(e){ showQrError(e.message || e); }
 });
