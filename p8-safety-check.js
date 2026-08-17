@@ -53,10 +53,13 @@ const pickerFix = fs.readFileSync('public/rc1-device-picker-fix.js', 'utf8');
 const ticketsJs = fs.readFileSync('public/tickets.js', 'utf8');
 const devicesJs = fs.readFileSync('public/devices.js', 'utf8');
 const reportsJs = fs.readFileSync('public/reports.js', 'utf8');
+const scopeGuard = fs.readFileSync('p2-scope-guard.js', 'utf8');
 
 assert.ok(maintenanceHtml.includes('/rc1-local-time-fix.js'), 'Sửa chữa phải nạp bản vá giờ địa phương RC1.');
 assert.ok(localTimeFix.includes('localNowDateTimeInputValue'), 'Thiếu xử lý giờ địa phương cho thời gian cập nhật sửa chữa.');
-assert.ok(localTimeFix.includes('isTerminalStatus') && localTimeFix.includes('Hủy phiếu'), 'Thiếu khóa hủy trực tiếp phiếu sửa chữa đã kết thúc.');
+assert.ok(localTimeFix.includes('isTerminalStatus') && localTimeFix.includes('Hủy phiếu'), 'Thiếu khóa hủy trực tiếp phiếu sửa chữa đã kết thúc trên giao diện.');
+assert.ok(scopeGuard.includes("app.delete('/api/repairs/:id'"), 'Thiếu guard API chống hủy phiếu sửa chữa đã kết thúc.');
+assert.ok(scopeGuard.includes("['Đã hoàn thành', 'Không sửa được', 'Đã hủy']"), 'Guard API phải khóa các trạng thái sửa chữa kết thúc.');
 assert.ok(inspectionHtml.includes('/rc1-device-picker-fix.js'), 'Bảo dưỡng phải nạp bản vá chọn thiết bị RC1.');
 assert.ok(inspectionsHtml.includes('/rc1-device-picker-fix.js'), 'Kiểm định phải nạp bản vá chọn thiết bị RC1.');
 assert.ok(pickerFix.includes('commitDeviceSelection'), 'Thiếu logic chốt thiết bị từ datalist/Tab/Enter/blur.');
