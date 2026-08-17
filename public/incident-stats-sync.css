@@ -1,0 +1,55 @@
+/* v5.0.0 hotfix: đồng bộ hàng thẻ thống kê Sự cố với màn hình Sửa chữa */
+.ticket-stats{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin:0 0 12px!important;
+  width:100%!important;
+}
+
+.ticket-stats .stat-card,
+.ticket-stats .simple-card{
+  min-width:0!important;
+  min-height:62px!important;
+  height:auto!important;
+  padding:9px 10px!important;
+  border:1px solid var(--line)!important;
+  border-left:4px solid #0f6fae!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  box-shadow:var(--shadow)!important;
+  text-align:center!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+
+.ticket-stats .stat-card h3,
+.ticket-stats .simple-card h3{
+  display:block!important;
+  margin:0 0 4px!important;
+  color:var(--muted)!important;
+  font-size:12px!important;
+  line-height:1.15!important;
+  font-weight:400!important;
+  text-transform:none!important;
+  letter-spacing:0!important;
+}
+
+.ticket-stats .stat-card .value,
+.ticket-stats .simple-card .value{
+  margin:0!important;
+  color:var(--primary)!important;
+  font-size:18px!important;
+  line-height:1!important;
+  font-weight:700!important;
+}
+
+@media (max-width:1200px){
+  .ticket-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+
+@media (max-width:700px){
+  .ticket-stats{grid-template-columns:1fr!important;}
+}
