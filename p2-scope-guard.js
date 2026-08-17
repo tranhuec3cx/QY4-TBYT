@@ -10,8 +10,9 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
   function deny(res) { return res.status(403).json({ error: 'Không có quyền truy cập dữ liệu của khoa khác.' }); }
 
   // RC1: phiếu sửa chữa đã kết thúc là hồ sơ lịch sử, không cho hủy trực tiếp qua API.
-  // Nếu cần điều chỉnh, người dùng phải cập nhật/bổ sung hồ sơ thay vì làm mất dấu vết nghiệp vụ.
-  app.delete('/api/repairs/:id', (req, res, next) => {
+  // Dùng app.use để tương thích cả Express thật và harness kiểm thử P4.
+  app.use('/api/repairs/:id', (req, res, next) => {
+    if (req.method !== 'DELETE') return next();
     const row = db().prepare('SELECT processing_status FROM repairs WHERE id=?').get(Number(req.params.id));
     if (!row) return next();
     const raw = String(row.processing_status || '').trim();
