@@ -46,6 +46,19 @@
   font-weight:700!important;
 }
 
+/* Giữ tiêu đề Ảnh/Video trên một dòng và căn giữa cột media. */
+.incident-table-v2 th:nth-child(9),
+.incident-table-v2 td:nth-child(9){
+  width:96px!important;
+  min-width:96px!important;
+  text-align:center!important;
+}
+.incident-table-v2 th:nth-child(9){
+  white-space:nowrap!important;
+  word-break:normal!important;
+  overflow-wrap:normal!important;
+}
+
 @media (max-width:1200px){
   .ticket-stats{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
 }
