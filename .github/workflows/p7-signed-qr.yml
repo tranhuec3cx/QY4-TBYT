@@ -1,0 +1,58 @@
+name: P7 Signed QR
+
+on:
+  push:
+    branches:
+      - fix/p7-signed-qr
+  pull_request:
+    paths:
+      - 'p7-start.js'
+      - 'p7-qr-token.js'
+      - 'p7-qr-security.js'
+      - 'public/p7-qr-client.js'
+      - 'public/inspect.js'
+      - 'public/qr-check.js'
+      - 'test-p7-signed-qr.js'
+      - 'test-p7-qr-client.js'
+      - 'package.json'
+      - '.env.example'
+      - '.gitignore'
+      - '.github/workflows/p7-signed-qr.yml'
+
+jobs:
+  signed-qr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Zero production dependency vulnerabilities
+        run: npm audit --omit=dev --audit-level=high
+      - name: Syntax check P7
+        run: |
+          node -c p7-start.js
+          node -c p7-qr-token.js
+          node -c p7-qr-security.js
+          node -c public/p7-qr-client.js
+          node -c public/inspect.js
+          node -c public/qr-check.js
+          node -c test-p7-signed-qr.js
+          node -c test-p7-qr-client.js
+      - name: Full source safety check
+        run: npm run check:safety
+      - name: P7 signed QR integration
+        run: npm run test:p7:qr
+      - name: P7 real client flow
+        run: npm run test:p7:client
+      - name: Preserve P2 auth integration
+        run: npm run test:p2
+      - name: Preserve P5 public QR rules
+        run: npm run test:p5:qr
+      - name: Preserve P6 proxy rules
+        run: npm run test:p6:proxy

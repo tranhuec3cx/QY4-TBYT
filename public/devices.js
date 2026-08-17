@@ -3,25 +3,6 @@ let META = { departments: [], groups: [] };
 let DEVICES = [];
 let FILTERED = [];
 
-
-function extractSerialFromHisCode(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return '';
-  const parts = raw.split('.').map(x => x.trim()).filter(Boolean);
-  const idx = parts.findIndex(x => x === '40026');
-  if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
-  if (parts.length >= 2 && /^\d+$/.test(parts[parts.length - 1])) return parts[parts.length - 1];
-  const m = raw.match(/40026[.\-_/ ]+(\d+)$/);
-  return m ? m[1] : '';
-}
-function autoFillSerialFromHis() {
-  const his = q('insuranceInput')?.value || '';
-  const serialInput = q('serialInput');
-  if (!serialInput) return;
-  const sn = extractSerialFromHisCode(his);
-  if (sn && !String(serialInput.value || '').trim()) serialInput.value = sn;
-}
-
 function byId(id) { return DEVICES.find(x => x.id === id); }
 function departmentName(code) { return META.departments.find(x => x.code === code)?.name || code; }
 function groupName(code) { return META.groups.find(x => x.code === code)?.name || code; }
@@ -57,20 +38,20 @@ function renderRows() {
   q("deviceRows").innerHTML = FILTERED.map((d, i) => `
     <tr>
       <td class="col-stt">${i+1}</td>
-      <td class="device-code">${d.device_code}</td>
-      <td class="device-name-cell"><div class="device-name" title="${escapeHtml(d.name || "")}">${d.name || ""}</div></td>
+      <td class="device-code">${escapeHtml(d.device_code || "")}</td>
+      <td class="device-name-cell"><div class="device-name" title="${escapeHtml(d.name || "")}">${escapeHtml(d.name || "")}</div></td>
       <td class="department-cell code-only">${escapeHtml(d.department_code || "")}</td>
-      <td>${d.model || ""}</td>
-      <td>${d.serial || ""}</td>
-      <td>${d.year_in_use || ""}</td>
-      <td>${d.location || ""}</td>
-      <td><span class="tag ${statusTagClass(d.status)}">${d.status || ""}</span></td>
+      <td>${escapeHtml(d.model || "")}</td>
+      <td>${escapeHtml(d.serial || "")}</td>
+      <td>${escapeHtml(d.year_in_use || "")}</td>
+      <td>${escapeHtml(d.location || "")}</td>
+      <td><span class="tag ${statusTagClass(d.status)}">${escapeHtml(d.status || "")}</span></td>
       <td>
         <div class="table-actions device-row-actions">
-          <a class="btn btn-sm" href="/device-detail.html?id=${d.id}">Xem hồ sơ</a>
-          <button class="btn btn-sm" onclick="showDeviceQrModal(byId(${d.id}))">QR</button>
-          <button class="btn btn-sm" onclick="editDevice(${d.id})">Cập nhật</button>
-          <button class="btn btn-sm danger-light" onclick="deleteDevice(${d.id})">Xóa</button>
+          <a class="btn btn-sm" href="/device-detail.html?id=${Number(d.id)}">Xem hồ sơ</a>
+          <button class="btn btn-sm" onclick="showDeviceQrModal(byId(${Number(d.id)}))">QR</button>
+          <button class="btn btn-sm" onclick="editDevice(${Number(d.id)})">Cập nhật</button>
+          <button class="btn btn-sm danger-light" onclick="deleteDevice(${Number(d.id)})">Xóa</button>
         </div>
       </td>
     </tr>
@@ -99,9 +80,13 @@ function editDevice(id) {
   window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
 }
 async function deleteDevice(id) {
-  if (!confirm("Xóa thiết bị này?")) return;
-  await api(`/api/devices/${id}`, { method: "DELETE" });
-  await loadData();
+  if (!confirm("Xóa thiết bị này? Chỉ thiết bị chưa phát sinh lịch sử mới có thể xóa.")) return;
+  try {
+    await api(`/api/devices/${id}`, { method: "DELETE" });
+    await loadData();
+  } catch (e) {
+    alert(e?.message || "Không thể xóa thiết bị.");
+  }
 }
 function resetForm() {
   q("deviceForm").reset();
@@ -116,7 +101,8 @@ async function saveDevice(e) {
     manufacturer: q("manufacturerInput").value.trim(),
     model: q("modelInput").value.trim(),
     insurance_code: q("insuranceInput").value.trim(),
-    serial: q("serialInput").value.trim() || extractSerialFromHisCode(q("insuranceInput").value),
+    // Serial Number của hãng là trường độc lập. Tuyệt đối không tự suy từ mã HIS/BHXH.
+    serial: q("serialInput").value.trim(),
     country: q("countryInput").value.trim(),
     year_manufactured: Number(q("yearManufacturedInput").value || 0),
     year_in_use: Number(q("yearUseInput").value || 0),
@@ -129,11 +115,15 @@ async function saveDevice(e) {
     note: q("noteInput").value.trim()
   };
   const id = q("deviceId").value;
-  if (id) await api(`/api/devices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
-  else await api(`/api/devices`, { method: "POST", body: JSON.stringify(payload) });
-  resetForm();
-  await loadData();
-  alert("Đã lưu thiết bị.");
+  try {
+    if (id) await api(`/api/devices/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    else await api(`/api/devices`, { method: "POST", body: JSON.stringify(payload) });
+    resetForm();
+    await loadData();
+    alert("Đã lưu thiết bị.");
+  } catch (e) {
+    alert(e?.message || "Không lưu được thiết bị.");
+  }
 }
 function exportDevices() {
   const rows = [["Mã thiết bị","Tên thiết bị","Nhóm","Khoa/Phòng","Hãng SX","Model","Năm SD","Hạn BH","Tình trạng","Cấp chất lượng","Serial","Nước sản xuất","Năm sản xuất","Nguyên giá","Nguồn kinh phí","Vị trí","Ghi chú"]];
@@ -146,7 +136,7 @@ async function loadData() {
   q("departmentFilter").innerHTML = optDepartmentFilter(META.departments, "Tất cả khoa/phòng");
   q("groupFilter").innerHTML = opt(META.groups, "Tất cả nhóm");
   const years = [...new Set(DEVICES.map(d => d.year_in_use))].sort((a,b)=>b-a);
-  q("yearFilter").innerHTML = '<option value="ALL">Tất cả năm</option>' + years.map(y => `<option value="${y}">${y}</option>`).join("");
+  q("yearFilter").innerHTML = '<option value="ALL">Tất cả năm</option>' + years.map(y => `<option value="${escapeHtml(y)}">${escapeHtml(y)}</option>`).join("");
   q("statusFilter").innerHTML = '<option value="ALL">Tất cả trạng thái</option><option>Đang hoạt động</option><option>Chờ sửa chữa</option><option>Ngừng hoạt động</option>';
   q("qualityFilter").innerHTML = '<option value="ALL">Tất cả cấp chất lượng</option><option value="1">Cấp 1</option><option value="2">Cấp 2</option><option value="3">Cấp 3</option><option value="4">Cấp 4</option><option value="5">Cấp 5</option>';
   const fundings = [...new Set(DEVICES.map(d => (d.funding || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b, "vi"));
@@ -158,7 +148,7 @@ async function loadData() {
 }
 document.addEventListener("DOMContentLoaded", async () => {
   setLayout("devices","Thiết bị","Quản lý hồ sơ thiết bị, Serial Number, khoa sử dụng và tình trạng");
-  applyFieldLabels("deviceForm", {departmentInput:"Khoa sử dụng",groupInput:"Nhóm thiết bị",nameInput:"Tên thiết bị",manufacturerInput:"Hãng sản xuất",modelInput:"Model",insuranceInput:"Mã bảo hiểm",serialInput:"Serial hãng",countryInput:"Nước sản xuất",yearManufacturedInput:"Năm sản xuất",yearUseInput:"Năm sử dụng",warrantyInput:"Hạn bảo hành",statusInput:"Tình trạng",qualityInput:"Cấp chất lượng",costInput:"Nguyên giá",fundingInput:"Nguồn kinh phí",locationInput:"Vị trí đặt máy",noteInput:"Ghi chú"});
+  applyFieldLabels("deviceForm", {departmentInput:"Khoa sử dụng",groupInput:"Nhóm thiết bị",nameInput:"Tên thiết bị",manufacturerInput:"Hãng sản xuất",modelInput:"Model",insuranceInput:"Mã máy BHXH / mã quản lý",serialInput:"Serial Number của hãng",countryInput:"Nước sản xuất",yearManufacturedInput:"Năm sản xuất",yearUseInput:"Năm sử dụng",warrantyInput:"Hạn bảo hành",statusInput:"Tình trạng",qualityInput:"Cấp chất lượng",costInput:"Nguyên giá",fundingInput:"Nguồn kinh phí",locationInput:"Vị trí đặt máy",noteInput:"Ghi chú"});
   await loadData();
   q("filterBtn").onclick = applyFilters;
   q("resetBtn").onclick = () => {
@@ -173,18 +163,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
   ["searchInput","departmentFilter","groupFilter","yearFilter","statusFilter","qualityFilter","fundingFilter"].forEach(id => q(id).addEventListener(id==="searchInput"?"input":"change", applyFilters));
   q("deviceForm").addEventListener("submit", saveDevice);
-  if (q("insuranceInput")) q("insuranceInput").addEventListener("input", autoFillSerialFromHis);
   q("exportBtn")?.addEventListener("click", exportDevices);
   if (q("exportExcelBtn")) q("exportExcelBtn").onclick = exportDevicesExcel;
 });
 
-
 function exportDevicesExcel() {
   exportA4Report('devices', { deptId: 'departmentFilter', groupId: 'groupFilter' });
 }
-
-
-
 
 function resolveDepartmentCodeFromExcel(raw) {
   const s = String(raw || "").trim();
@@ -205,7 +190,6 @@ function resolveGroupCodeFromExcel(raw) {
   const byName = META.groups.find(g => g.name === s);
   return byName ? byName.code : "";
 }
-
 
 function reportFileStamp() {
   const d = new Date();

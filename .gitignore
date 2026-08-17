@@ -16,6 +16,12 @@ uploads/
 # Database
 db/*.sqlite
 db/*.db
+db/*.sqlite-wal
+db/*.sqlite-shm
+db/qr-signing-secret
+db/qr-signing-secret.*
+*.sqlite-wal
+*.sqlite-shm
 
 # VSCode
 .vscode/

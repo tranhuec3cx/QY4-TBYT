@@ -1,0 +1,38 @@
+name: P5 QR Public
+
+on:
+  pull_request:
+    paths:
+      - 'public/inspect.js'
+      - 'p2-security.js'
+      - 'p3-start.js'
+      - 'test-p2-security.js'
+      - 'test-p5-qr.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/p5-qr-public.yml'
+  push:
+    branches:
+      - fix/p5-qr-public
+
+jobs:
+  qr-public:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Zero production dependency vulnerabilities
+        run: npm audit --omit=dev
+      - name: Verify hardened server source
+        run: npm run check:safety
+      - name: P2 auth and public API integration
+        run: npm run test:p2
+      - name: P5 QR public rules
+        run: npm run test:p5:qr

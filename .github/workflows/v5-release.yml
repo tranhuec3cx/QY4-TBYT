@@ -1,0 +1,151 @@
+name: V5.0.0 Production Release Gate
+
+on:
+  push:
+    branches:
+      - release/v5.0.0
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'server.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'public/**'
+      - 'p2-*.js'
+      - 'p7-*.js'
+      - 'proxy-config.js'
+      - 'test-*.js'
+      - 'p8-safety-check.js'
+      - 'CAI_DAT_VA_CHAY.bat'
+      - '.github/workflows/v5-release.yml'
+      - 'RELEASE_V5.0.0.md'
+      - 'VERSION'
+
+jobs:
+  production-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Verify release marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f VERSION
+          test "$(tr -d '\r\n' < VERSION)" = "5.0.0"
+          grep -q 'QY4-TTBYT v5.0.0' README.md
+          test -f RELEASE_V5.0.0.md
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev
+
+      - name: Reject runtime/private artifacts in Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          BAD="$(git ls-files | grep -E '(^|/)node_modules/|(^|/)uploads/|(^|/)\.env$|(^|/)db/qr-signing-secret|\.(sqlite|sqlite-wal|sqlite-shm|sqlite-journal|db|db-wal|db-shm|db-journal)$' || true)"
+          if [ -n "$BAD" ]; then
+            echo "Khong duoc theo doi cac tep/thu muc runtime sau:"
+            echo "$BAD"
+            exit 1
+          fi
+
+      - name: Required source structure and official logo
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f server.js
+          test -f package.json
+          test -f package-lock.json
+          test -d public
+          test -f public/index.html
+          test -f public/dashboard.html
+          test -f public/tickets.html
+          test -f public/maintenance.html
+          test -f public/inspection.html
+          test -f public/inspections.html
+          test -f public/reports.html
+          test -f public/qr-check.html
+          test -s public/assets/BVQY4.jpg
+          grep -q '/assets/BVQY4.jpg' public/login.html
+
+      - name: Direct runtime syntax and safety
+        run: |
+          node -c server.js
+          npm run check:safety
+
+      - name: Full automated regression
+        run: |
+          npm run test:p2
+          npm run test:p3:excel
+          npm run test:p3:reports
+          npm run test:p4:ui
+          npm run test:p4:role
+          npm run test:p4:dashboard
+          npm run test:p4:scope
+          npm run test:p5:qr
+          npm run test:p6:proxy
+          npm run test:p7:qr
+          npm run test:p7:client
+
+      - name: Verify A4 report wiring and final UI
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'rc1-report-a4-fix.js' public/reports.html
+          grep -q '/api/reports/export-a4?' public/rc1-report-a4-fix.js
+          grep -q 'addMaintTopBtn' public/inspection.html
+          grep -q 'Thêm kiểm định' public/inspections.html
+          grep -q "exportA4Report('incidents'" public/tickets.js
+          grep -q "exportA4Report('repairs'" public/maintenance.js
+          grep -q "exportA4Report('maintenances'" public/inspection.js
+          grep -q "exportA4Report('inspections'" public/inspections.js
+
+      - name: Production fresh-install smoke test
+        env:
+          PORT: '5199'
+          DEMO_MODE: 'false'
+          ADMIN_INITIAL_PASSWORD: 'V5-Production-Gate-Strong-Password-5199'
+          TRUST_PROXY: 'false'
+          QR_PUBLIC_BASE_URL: ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf db uploads .env
+          node server.js > /tmp/qy4-v5-prod.log 2>&1 &
+          PID=$!
+          trap 'kill "$PID" 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:5199/login.html >/tmp/qy4-login.html 2>/dev/null; then break; fi
+            sleep 0.5
+          done
+          kill -0 "$PID"
+          grep -q 'Đăng nhập' /tmp/qy4-login.html
+          grep -q '/assets/BVQY4.jpg' /tmp/qy4-login.html
+          node - <<'NODE'
+          const Database = require('better-sqlite3');
+          const db = new Database('db/qy4_ttbyt.sqlite', { readonly:true });
+          const devices = db.prepare('SELECT COUNT(*) c FROM devices').get().c;
+          const departments = db.prepare('SELECT COUNT(*) c FROM departments').get().c;
+          const users = db.prepare('SELECT COUNT(*) c FROM users').get().c;
+          db.close();
+          if (devices !== 0) throw new Error(`Production trang khong duoc co thiet bi demo: ${devices}`);
+          if (departments < 1) throw new Error('Thieu danh muc khoa/phong nen.');
+          if (users !== 1) throw new Error(`Production ban dau chi duoc co 01 admin: ${users}`);
+          console.log(`[V5 PROD] departments=${departments}; users=${users}; devices=${devices}`);
+          NODE
+          kill "$PID"
+          wait "$PID" 2>/dev/null || true
+          trap - EXIT
+          cat /tmp/qy4-v5-prod.log
