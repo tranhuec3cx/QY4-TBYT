@@ -41,4 +41,31 @@ assert.strictEqual(pkg.scripts.start, 'node server.js', 'npm start phải chạy
 assert.strictEqual(pkg.scripts.demo, 'node server.js --demo', 'npm run demo phải chạy server.js trực tiếp với --demo.');
 assert.strictEqual(pkg.scripts['check:safety'], 'node p8-safety-check.js', 'check:safety phải kiểm tra source trực tiếp, không đi qua runtime patcher.');
 
-console.log('[P8 SAFETY] PASS - P0-P7 đã nằm trực tiếp trong server.js; npm start không còn phụ thuộc safe-start/p3-start/p7-start.');
+// RC1 - các lỗi chỉ phát hiện khi nghiệm thu thực tế trên Windows phải được khóa bằng source check.
+const maintenanceHtml = fs.readFileSync('public/maintenance.html', 'utf8');
+const maintenanceJs = fs.readFileSync('public/maintenance.js', 'utf8');
+const localTimeFix = fs.readFileSync('public/rc1-local-time-fix.js', 'utf8');
+const inspectionHtml = fs.readFileSync('public/inspection.html', 'utf8');
+const inspectionJs = fs.readFileSync('public/inspection.js', 'utf8');
+const inspectionsHtml = fs.readFileSync('public/inspections.html', 'utf8');
+const inspectionsJs = fs.readFileSync('public/inspections.js', 'utf8');
+const pickerFix = fs.readFileSync('public/rc1-device-picker-fix.js', 'utf8');
+const ticketsJs = fs.readFileSync('public/tickets.js', 'utf8');
+const devicesJs = fs.readFileSync('public/devices.js', 'utf8');
+const reportsJs = fs.readFileSync('public/reports.js', 'utf8');
+
+assert.ok(maintenanceHtml.includes('/rc1-local-time-fix.js'), 'Sửa chữa phải nạp bản vá giờ địa phương RC1.');
+assert.ok(localTimeFix.includes('localNowDateTimeInputValue'), 'Thiếu xử lý giờ địa phương cho thời gian cập nhật sửa chữa.');
+assert.ok(localTimeFix.includes('isTerminalStatus') && localTimeFix.includes('Hủy phiếu'), 'Thiếu khóa hủy trực tiếp phiếu sửa chữa đã kết thúc.');
+assert.ok(inspectionHtml.includes('/rc1-device-picker-fix.js'), 'Bảo dưỡng phải nạp bản vá chọn thiết bị RC1.');
+assert.ok(inspectionsHtml.includes('/rc1-device-picker-fix.js'), 'Kiểm định phải nạp bản vá chọn thiết bị RC1.');
+assert.ok(pickerFix.includes('commitDeviceSelection'), 'Thiếu logic chốt thiết bị từ datalist/Tab/Enter/blur.');
+
+assert.ok(devicesJs.includes("exportA4Report('devices'"), 'Xuất Excel Thiết bị phải dùng engine A4.');
+assert.ok(ticketsJs.includes("exportA4Report('incidents'"), 'Xuất Excel Sự cố phải dùng engine A4.');
+assert.ok(maintenanceJs.includes("exportA4Report('repairs'"), 'Xuất Excel Sửa chữa phải dùng engine A4.');
+assert.ok(inspectionJs.includes("exportA4Report('maintenances'"), 'Xuất Excel Bảo dưỡng phải dùng engine A4.');
+assert.ok(inspectionsJs.includes("exportA4Report('inspections'"), 'Xuất Excel Kiểm định phải dùng engine A4.');
+assert.ok(reportsJs.includes('/api/reports/export-a4?'), 'Trung tâm Báo cáo phải dùng engine xuất A4 phía server.');
+
+console.log('[P8 SAFETY] PASS - P0-P7 + các lỗi RC1 nghiệm thu thực tế đã được khóa bằng source check.');
