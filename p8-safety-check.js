@@ -52,7 +52,9 @@ const inspectionsJs = fs.readFileSync('public/inspections.js', 'utf8');
 const pickerFix = fs.readFileSync('public/rc1-device-picker-fix.js', 'utf8');
 const ticketsJs = fs.readFileSync('public/tickets.js', 'utf8');
 const devicesJs = fs.readFileSync('public/devices.js', 'utf8');
+const reportsHtml = fs.readFileSync('public/reports.html', 'utf8');
 const reportsJs = fs.readFileSync('public/reports.js', 'utf8');
+const reportA4Fix = fs.readFileSync('public/rc1-report-a4-fix.js', 'utf8');
 const scopeGuard = fs.readFileSync('p2-scope-guard.js', 'utf8');
 
 assert.ok(maintenanceHtml.includes('/rc1-local-time-fix.js'), 'Sửa chữa phải nạp bản vá giờ địa phương RC1.');
@@ -66,11 +68,18 @@ assert.ok(inspectionHtml.includes('/rc1-device-picker-fix.js'), 'Bảo dưỡng 
 assert.ok(inspectionsHtml.includes('/rc1-device-picker-fix.js'), 'Kiểm định phải nạp bản vá chọn thiết bị RC1.');
 assert.ok(pickerFix.includes('commitDeviceSelection'), 'Thiếu logic chốt thiết bị từ datalist/Tab/Enter/blur.');
 
+// RC1 - đồng bộ topbar Bảo dưỡng/Kiểm định với các màn hình nghiệp vụ khác.
+assert.ok(inspectionHtml.includes('class="page-actions"') && inspectionHtml.includes('id="addMaintTopBtn"'), 'Bảo dưỡng phải đặt nút Thêm bảo dưỡng trong page-actions ở góc trên phải.');
+assert.ok(inspectionsHtml.includes('class="page-actions"') && inspectionsHtml.includes('+ Thêm kiểm định'), 'Kiểm định phải đặt nút Thêm kiểm định trong page-actions ở góc trên phải.');
+
 assert.ok(devicesJs.includes("exportA4Report('devices'"), 'Xuất Excel Thiết bị phải dùng engine A4.');
 assert.ok(ticketsJs.includes("exportA4Report('incidents'"), 'Xuất Excel Sự cố phải dùng engine A4.');
 assert.ok(maintenanceJs.includes("exportA4Report('repairs'"), 'Xuất Excel Sửa chữa phải dùng engine A4.');
 assert.ok(inspectionJs.includes("exportA4Report('maintenances'"), 'Xuất Excel Bảo dưỡng phải dùng engine A4.');
 assert.ok(inspectionsJs.includes("exportA4Report('inspections'"), 'Xuất Excel Kiểm định phải dùng engine A4.');
 assert.ok(reportsJs.includes('/api/reports/export-a4?'), 'Trung tâm Báo cáo phải dùng engine xuất A4 phía server.');
+assert.ok(reportsHtml.includes('/rc1-report-a4-fix.js'), 'Trung tâm Báo cáo phải nạp khóa RC1 khôi phục xuất A4 sau P3.');
+assert.ok(reportsHtml.indexOf('/reports-p3-fix.js') < reportsHtml.indexOf('/rc1-report-a4-fix.js'), 'Khóa A4 RC1 phải nạp sau reports-p3-fix.js.');
+assert.ok(reportA4Fix.includes('/api/reports/export-a4?'), 'Khóa A4 RC1 phải gọi engine A4 phía server.');
 
 console.log('[P8 SAFETY] PASS - P0-P7 + các lỗi RC1 nghiệm thu thực tế đã được khóa bằng source check.');
