@@ -1,13 +1,15 @@
-# QY4-TTBYT
+# QY4-TTBYT v5.0.0
 
-Phần mềm quản lý trang thiết bị y tế cho **Khoa Trang bị - Bệnh viện Quân y 4**.
+**Bản chính thức** của phần mềm quản lý trang thiết bị y tế cho **Khoa Trang bị - Bệnh viện Quân y 4**.
+
+Trạng thái: đã nghiệm thu RC1 trên Windows ngày 17/08/2026 và chuyển sang nhánh phát hành `release/v5.0.0`.
 
 ## Công nghệ
 
 - Node.js + Express
 - SQLite (`better-sqlite3`, WAL, foreign keys)
 - HTML/CSS/JavaScript thuần
-- ExcelJS cho nhập/xuất Excel
+- ExcelJS cho nhập/xuất Excel A4
 - QR thiết bị ký HMAC-SHA256
 
 ## Chức năng chính
@@ -18,13 +20,13 @@ Phần mềm quản lý trang thiết bị y tế cho **Khoa Trang bị - Bệnh
 - Quản lý sửa chữa, chi phí, trạng thái và lịch sử xử lý.
 - Quản lý bảo dưỡng, kiểm định/hiệu chuẩn và tài liệu kỹ thuật.
 - Dashboard cảnh báo quá hạn/sắp hạn bảo dưỡng, kiểm định, bảo hành và sửa chữa.
-- Báo cáo tổng hợp, báo cáo theo khoa/nhóm, xuất Excel.
-- QR thiết bị để kiểm tra nhanh/báo sự cố; payload công khai được tối thiểu hóa và ràng buộc bằng chữ ký theo đúng thiết bị.
+- Báo cáo tổng hợp, báo cáo theo khoa/nhóm và xuất Excel A4 có phần đầu hành chính.
+- QR thiết bị để kiểm tra nhanh/báo sự cố trên điện thoại; payload công khai được tối thiểu hóa và ràng buộc bằng chữ ký theo đúng thiết bị.
 - Nhật ký bảo mật/audit theo tài khoản đăng nhập.
 
 ## Trạng thái hardening P0-P8
 
-Từ P8, `npm start` chạy **trực tiếp `server.js`**. Các lớp bảo vệ P0-P7 đã được hợp nhất vào backend chính; không còn phụ thuộc chuỗi vá source `safe-start.js → p3-start.js → p7-start.js` khi chạy production.
+`npm start` chạy **trực tiếp `server.js`**. Các lớp bảo vệ P0-P7 đã được hợp nhất vào backend chính; không còn phụ thuộc chuỗi vá source `safe-start.js → p3-start.js → p7-start.js` khi chạy production.
 
 Các bảo vệ chính đang có:
 
@@ -40,29 +42,42 @@ Các bảo vệ chính đang có:
 - `.env` được nạp trước khi đọc PORT/QR/TRUST_PROXY/DEMO_MODE.
 - SQLite bật `foreign_keys=ON`, WAL và `busy_timeout`.
 
-Các file `safe-start.js`, `p3-start.js`, `p7-start.js` hiện chỉ còn phục vụ đối chiếu/hồi quy trong giai đoạn chuyển đổi; **không phải đường chạy production**.
+Các file `safe-start.js`, `p3-start.js`, `p7-start.js` hiện chỉ còn phục vụ đối chiếu/hồi quy; **không phải đường chạy production**.
 
-## Cài đặt
+## Cài đặt bản chính thức trên Windows
 
-Khuyến nghị Node.js 20+.
+Khuyến nghị Node.js 20.x.
+
+Cách đơn giản nhất: chạy
+
+```text
+CAI_DAT_VA_CHAY.bat
+```
+
+Script chính thức sẽ:
+
+1. kiểm tra Node.js/npm;
+2. tạo `.env` production tối thiểu nếu chưa có;
+3. chặn nếu phát hiện `DEMO_MODE=true`;
+4. chạy `npm ci`;
+5. chạy `npm audit --omit=dev`;
+6. chạy `npm run check:safety`;
+7. chỉ khởi động server khi các bước trên đạt.
+
+Có thể chạy thủ công:
 
 ```bash
 npm ci
-```
-
-Nếu không có `package-lock.json` tương ứng thì dùng:
-
-```bash
-npm install
+npm audit --omit=dev
+npm run check:safety
+npm start
 ```
 
 Không copy `node_modules` từ máy khác vì `better-sqlite3` có thành phần biên dịch theo hệ điều hành.
 
 ## Cấu hình production
 
-Sao chép `.env.example` thành `.env`, sau đó chỉnh các giá trị cần thiết. `.env` đã được loại khỏi Git.
-
-Tối thiểu nên kiểm tra:
+Nếu tự tạo `.env`, tối thiểu nên có:
 
 ```text
 PORT=5000
@@ -70,21 +85,24 @@ DEMO_MODE=false
 ADMIN_INITIAL_PASSWORD=<mật khẩu mạnh từ 10 ký tự trở lên>
 AUTH_SESSION_HOURS=8
 TRUST_PROXY=false
-QR_PUBLIC_BASE_URL=https://ten-mien-cua-don-vi
+QR_SIGNING_SECRET=
+QR_PUBLIC_BASE_URL=
 ```
 
 Nếu chưa đặt `ADMIN_INITIAL_PASSWORD` ở lần chạy đầu, hệ thống sinh mật khẩu quản trị tạm thời và in một lần trên cửa sổ chạy; sau đăng nhập bắt buộc đổi mật khẩu.
 
-## Chạy phần mềm
+Nếu QR chỉ dùng trong cùng Wi-Fi/LAN, có thể để trống `QR_PUBLIC_BASE_URL` và dùng địa chỉ LAN mà server hiển thị. Nếu cần mở QR từ Internet/4G/5G, phải cấu hình domain/tunnel phù hợp và `TRUST_PROXY` đúng môi trường.
 
-```bash
-npm start
-```
-
-Hoặc trên Windows dùng:
+## Chạy phần mềm hằng ngày
 
 ```text
 CHAY_PHAN_MEM.bat
+```
+
+hoặc:
+
+```bash
+npm start
 ```
 
 Sau đó mở:
@@ -99,7 +117,7 @@ Chỉ dùng dữ liệu demo khi chủ động chạy:
 npm run demo
 ```
 
-Không dùng DEMO_MODE trên database production.
+**Không dùng DEMO_MODE trên database production.**
 
 ## QR thiết bị
 
@@ -115,18 +133,40 @@ db/qr-signing-secret
 
 QR cũ không có token ký từ trước P7 cần được in lại.
 
+## Excel A4
+
+Các nút Xuất Excel chính của Thiết bị, Sự cố, Sửa chữa, Bảo dưỡng, Kiểm định và Trung tâm Báo cáo dùng cùng engine A4 phía server.
+
+Mẫu chính có phần đầu:
+
+```text
+CỤC HẬU CẦN - KỸ THUẬT QUÂN KHU 4
+BỆNH VIỆN QUÂN Y 4
+
+[TÊN BÁO CÁO]
+(Từ ngày ... đến ngày ...)
+```
+
 ## Sao lưu tối thiểu
 
-Trước khi nâng cấp hoặc di chuyển máy chủ, sao lưu:
+Trước khi nâng cấp hoặc di chuyển máy chủ, tắt server rồi sao lưu đồng thời:
 
 ```text
 db/qy4_ttbyt.sqlite
+db/qy4_ttbyt.sqlite-wal
+db/qy4_ttbyt.sqlite-shm
 db/qr-signing-secret
 uploads/
 .env
 ```
 
+Nếu vẫn tồn tại `-wal`/`-shm`, không chỉ copy riêng file `.sqlite`.
+
 Không đưa các file này lên repository public.
+
+## Dữ liệu của bản phát hành
+
+Repository chính thức không chứa database, WAL/SHM, uploads, `.env` hoặc khóa QR thật. Khi cài mới, hệ thống tạo database production trắng: danh mục nền + 01 admin, không có thiết bị demo.
 
 ## Kiểm tra trước triển khai
 
@@ -145,6 +185,8 @@ npm run test:p7:qr
 npm run test:p7:client
 ```
 
-GitHub Actions `Safety Check P0-P8` còn kiểm tra khởi động database production trắng, DEMO_MODE, vòng đời hủy mềm và toàn bộ chuỗi bảo mật.
+Xem thêm:
 
-Xem hướng dẫn triển khai chi tiết tại `DEPLOYMENT_GUIDE_V5.md`.
+- `RELEASE_V5.0.0.md` - biên bản kỹ thuật/chốt phát hành.
+- `DEPLOYMENT_GUIDE_V5.md` - hướng dẫn triển khai chi tiết.
+- `RELEASE_CANDIDATE_V5.md` - lịch sử nghiệm thu RC1.
