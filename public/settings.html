@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Cài đặt</title>
+  <title>Cài đặt - QY4 TBYT</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/settings-ui.css" />
 </head>
 <body>
   <div class="layout">
@@ -15,64 +16,131 @@
           <h1 id="pageTitle" class="page-title"></h1>
           <p id="pageSubtitle" class="page-subtitle"></p>
         </div>
-        <div class="user-box">Người dùng: Quản trị viên</div>
       </div>
 
-      <section class="settings-grid-balanced">
-        <div class="card">
-          <div class="table-card-header"><h3>Danh mục khoa/phòng</h3><div class="small">Quản lý mã khoa và tên khoa/phòng dùng trong toàn hệ thống</div></div>
-          <div class="filters" style="grid-template-columns:1fr auto; margin-bottom:14px;">
-            <input id="deptSearch" placeholder="Tìm mã khoa / tên khoa phòng" />
-            <button class="btn" id="deptFilterBtn">Lọc</button>
-          </div>
-          <div class="table-wrap scroll-area">
-            <table>
-              <thead><tr><th>STT</th><th>Mã khoa</th><th>Tên khoa/phòng</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
-              <tbody id="deptRows"></tbody>
-            </table>
-          </div>
-          <div class="inline-form-card">
-            <div class="table-card-header"><h3>Thêm / cập nhật khoa/phòng</h3></div>
-            <form id="deptForm">
-              <input type="hidden" id="deptOriginalCode" />
-              <div class="form-grid">
-                <input id="deptCode" placeholder="Mã khoa, ví dụ: A17" required />
-                <input id="deptName" class="span-2" placeholder="Tên khoa/phòng" required />
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit">Lưu khoa/phòng</button>
-                <button class="btn" type="button" id="deptResetBtn">Đặt lại form</button>
-              </div>
-            </form>
+      <section class="card settings-shell">
+        <div class="settings-local-tabs" role="tablist" aria-label="Cài đặt hệ thống">
+          <button class="settings-local-tab active" type="button" data-tab="departments">Khoa / Phòng</button>
+          <button class="settings-local-tab" type="button" data-tab="groups">Nhóm thiết bị</button>
+          <button class="settings-local-tab" id="usersTabBtn" type="button" data-tab="users">Tài khoản người dùng</button>
+        </div>
+        <div class="settings-intro">
+          <b>Danh mục dùng chung</b>
+          <span>Thay đổi tại đây được sử dụng ngay ở màn hình Thiết bị, bộ lọc và các hồ sơ nghiệp vụ.</span>
+        </div>
+      </section>
+
+      <section class="card settings-panel active" id="panel-departments">
+        <div class="settings-panel-head">
+          <div>
+            <h3>Khoa / Phòng</h3>
+            <p>Quản lý mã khoa và tên đơn vị. Tên khoa chỉ nhập phần tên, hệ thống tự hiển thị dạng “A1 - Khoa Quốc tế”.</p>
           </div>
         </div>
+        <div class="settings-toolbar">
+          <input id="deptSearch" placeholder="Tìm mã khoa hoặc tên khoa/phòng" />
+          <button class="btn" id="deptFilterBtn" type="button">Lọc</button>
+        </div>
+        <div class="table-wrap settings-table-wrap">
+          <table>
+            <thead><tr><th>STT</th><th>Mã khoa</th><th>Tên khoa/phòng</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
+            <tbody id="deptRows"></tbody>
+          </table>
+        </div>
+        <div class="settings-form-card">
+          <h4>Thêm / cập nhật khoa/phòng</h4>
+          <form id="deptForm">
+            <input type="hidden" id="deptOriginalCode" />
+            <div class="settings-form-grid settings-form-grid-3">
+              <label><span>Mã khoa</span><input id="deptCode" placeholder="Ví dụ: A17" required /></label>
+              <label class="span-2"><span>Tên khoa/phòng</span><input id="deptName" placeholder="Ví dụ: Khoa Quốc tế" required /></label>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Lưu khoa/phòng</button>
+              <button class="btn" type="button" id="deptResetBtn">Đặt lại</button>
+            </div>
+          </form>
+        </div>
+      </section>
 
-        <div class="card">
-          <div class="table-card-header"><h3>Danh mục nhóm thiết bị</h3><div class="small">Quản lý mã nhóm và tên nhóm thiết bị chuẩn</div></div>
-          <div class="filters" style="grid-template-columns:1fr auto; margin-bottom:14px;">
-            <input id="groupSearch" placeholder="Tìm mã nhóm / tên nhóm thiết bị" />
-            <button class="btn" id="groupFilterBtn">Lọc</button>
+      <section class="card settings-panel" id="panel-groups">
+        <div class="settings-panel-head">
+          <div>
+            <h3>Nhóm thiết bị</h3>
+            <p>Nhóm nên theo chuyên môn chung, không tạo riêng theo từng máy. Ví dụ: Kéo giãn cột sống, Nội soi, Điện châm, Sóng ngắn, Gây mê, Tiệt khuẩn…</p>
           </div>
-          <div class="table-wrap scroll-area">
-            <table>
-              <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm thiết bị</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
-              <tbody id="groupRows"></tbody>
-            </table>
+        </div>
+        <div class="settings-toolbar">
+          <input id="groupSearch" placeholder="Tìm mã nhóm hoặc tên nhóm thiết bị" />
+          <button class="btn" id="groupFilterBtn" type="button">Lọc</button>
+        </div>
+        <div class="table-wrap settings-table-wrap">
+          <table>
+            <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm thiết bị</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
+            <tbody id="groupRows"></tbody>
+          </table>
+        </div>
+        <div class="settings-form-card">
+          <h4>Thêm / cập nhật nhóm thiết bị</h4>
+          <form id="groupForm">
+            <input type="hidden" id="groupOriginalCode" />
+            <div class="settings-form-grid settings-form-grid-3">
+              <label><span>Mã nhóm</span><input id="groupCode" placeholder="Ví dụ: KGC" required /></label>
+              <label class="span-2"><span>Tên nhóm thiết bị</span><input id="groupName" placeholder="Ví dụ: Kéo giãn cột sống" required /></label>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Lưu nhóm thiết bị</button>
+              <button class="btn" type="button" id="groupResetBtn">Đặt lại</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="card settings-panel" id="panel-users">
+        <div class="settings-panel-head">
+          <div>
+            <h3>Tài khoản người dùng</h3>
+            <p>Chỉ Quản trị viên được quản lý tài khoản. Không xóa tài khoản đã sử dụng; dùng trạng thái “Khóa” để bảo toàn nhật ký.</p>
           </div>
-          <div class="inline-form-card">
-            <div class="table-card-header"><h3>Thêm / cập nhật nhóm thiết bị</h3></div>
-            <form id="groupForm">
-              <input type="hidden" id="groupOriginalCode" />
-              <div class="form-grid">
-                <input id="groupCode" placeholder="Mã nhóm, ví dụ: NS" required />
-                <input id="groupName" class="span-2" placeholder="Tên nhóm thiết bị" required />
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="submit">Lưu nhóm thiết bị</button>
-                <button class="btn" type="button" id="groupResetBtn">Đặt lại form</button>
-              </div>
-            </form>
-          </div>
+        </div>
+        <div class="settings-toolbar settings-toolbar-users">
+          <input id="userSearch" placeholder="Tìm họ tên, tài khoản, khoa/phòng" />
+          <select id="userRoleFilter">
+            <option value="ALL">Tất cả vai trò</option>
+            <option>Quản trị viên</option>
+            <option>Khoa Trang bị</option>
+            <option>Khoa sử dụng</option>
+          </select>
+          <select id="userStatusFilter">
+            <option value="ALL">Tất cả trạng thái</option>
+            <option>Hoạt động</option>
+            <option>Khóa</option>
+          </select>
+        </div>
+        <div class="table-wrap settings-table-wrap">
+          <table class="settings-users-table">
+            <thead><tr><th>STT</th><th>Họ và tên</th><th>Tài khoản</th><th>Khoa/phòng</th><th>Vai trò</th><th>Trạng thái</th><th>Đăng nhập gần nhất</th><th>Thao tác</th></tr></thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+        <div class="settings-form-card">
+          <h4>Thêm / cập nhật tài khoản</h4>
+          <form id="userForm">
+            <input type="hidden" id="userId" />
+            <div class="settings-form-grid settings-user-form-grid">
+              <label><span>Họ và tên</span><input id="userFullName" required /></label>
+              <label><span>Tên đăng nhập</span><input id="userUsername" autocomplete="off" required /></label>
+              <label><span>Khoa/phòng</span><select id="userDepartment"></select></label>
+              <label><span>Vai trò</span><select id="userRole" required><option>Quản trị viên</option><option>Khoa Trang bị</option><option>Khoa sử dụng</option></select></label>
+              <label><span>Trạng thái</span><select id="userStatus" required><option>Hoạt động</option><option>Khóa</option></select></label>
+              <label><span>Số điện thoại</span><input id="userPhone" inputmode="tel" /></label>
+              <label class="span-2" id="initialPasswordField"><span>Mật khẩu ban đầu (để trống để hệ thống tự sinh)</span><input id="userPassword" type="password" autocomplete="new-password" minlength="10" /></label>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" type="submit">Lưu tài khoản</button>
+              <button class="btn" type="button" id="userResetBtn">Đặt lại</button>
+            </div>
+          </form>
         </div>
       </section>
     </main>
