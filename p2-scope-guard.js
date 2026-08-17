@@ -10,13 +10,35 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
   function deny(res) { return res.status(403).json({ error: 'Không có quyền truy cập dữ liệu của khoa khác.' }); }
 
   app.use('/api', (req, res, next) => {
+    // Chụp path ngay khi đang ở mount /api. Khi response trả về, Express có thể đã
+    // phục hồi req.url về dạng /api/... nên không dùng req.path động trong res.json.
+    const scopedPath = req.path;
+
+    // RC1: phiếu sửa chữa đã kết thúc là hồ sơ lịch sử, không cho hủy trực tiếp qua API.
+    // Đặt guard trong middleware /api hiện hữu để giữ tương thích với Express và test harness P4.
+    if (req.method === 'DELETE') {
+      const repairMatch = scopedPath.match(/^\/repairs\/(\d+)$/);
+      if (repairMatch) {
+        const row = db().prepare('SELECT processing_status FROM repairs WHERE id=?').get(Number(repairMatch[1]));
+        if (row) {
+          const raw = String(row.processing_status || '').trim();
+          const normalized = ['Đã sửa xong', 'Bàn giao sử dụng', 'Hoàn thành'].includes(raw)
+            ? 'Đã hoàn thành'
+            : (['Hủy', 'Huỷ', 'Đã huỷ'].includes(raw) ? 'Đã hủy' : raw);
+          if (['Đã hoàn thành', 'Không sửa được', 'Đã hủy'].includes(normalized)) {
+            return res.status(409).json({
+              error: 'Phiếu sửa chữa đã kết thúc nên không thể hủy trực tiếp. Hãy bổ sung/cập nhật hồ sơ để bảo toàn lịch sử thiết bị.'
+            });
+          }
+        }
+      }
+      return next();
+    }
+
     if (req.method !== 'GET') return next();
     const user = getUser(req);
     if (!user) return next();
 
-    // Chụp path ngay khi đang ở mount /api. Khi response trả về, Express có thể đã
-    // phục hồi req.url về dạng /api/... nên không dùng req.path động trong res.json.
-    const scopedPath = req.path;
     const originalJson = res.json.bind(res);
     res.json = (payload) => {
       let data = payload;
