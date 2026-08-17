@@ -47,7 +47,7 @@ jobs:
             exit 1
           fi
 
-      - name: Required source structure
+      - name: Required source structure and official logo
         shell: bash
         run: |
           set -euo pipefail
@@ -62,9 +62,9 @@ jobs:
           test -f public/inspections.html
           test -f public/reports.html
           test -f public/qr-check.html
-          if [ ! -f public/assets/BVQY4.jpg ]; then
-            echo "::warning::Thiếu public/assets/BVQY4.jpg - phần mềm vẫn chạy nhưng logo bệnh viện chưa được đóng gói trong repo mới."
-          fi
+          test -s public/assets/BVQY4.jpg
+          test "$(git hash-object public/assets/BVQY4.jpg)" = "b6437339d824e0d482cc3dd65299ba71f3ea21d7"
+          grep -q '/assets/BVQY4.jpg' public/login.html
 
       - name: Direct runtime syntax and safety
         run: |
@@ -104,6 +104,10 @@ jobs:
           done
           kill -0 "$PID"
           grep -q 'Đăng nhập' /tmp/qy4-login.html
+          grep -q '/assets/BVQY4.jpg' /tmp/qy4-login.html
+          curl -fsS http://127.0.0.1:5199/assets/BVQY4.jpg -o /tmp/qy4-logo.jpg
+          test -s /tmp/qy4-logo.jpg
+          test "$(git hash-object /tmp/qy4-logo.jpg)" = "b6437339d824e0d482cc3dd65299ba71f3ea21d7"
           node - <<'NODE'
           const Database = require('better-sqlite3');
           const db = new Database('db/qy4_ttbyt.sqlite', { readonly:true });
