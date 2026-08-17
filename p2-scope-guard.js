@@ -9,6 +9,23 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
   }
   function deny(res) { return res.status(403).json({ error: 'Không có quyền truy cập dữ liệu của khoa khác.' }); }
 
+  // RC1: phiếu sửa chữa đã kết thúc là hồ sơ lịch sử, không cho hủy trực tiếp qua API.
+  // Nếu cần điều chỉnh, người dùng phải cập nhật/bổ sung hồ sơ thay vì làm mất dấu vết nghiệp vụ.
+  app.delete('/api/repairs/:id', (req, res, next) => {
+    const row = db().prepare('SELECT processing_status FROM repairs WHERE id=?').get(Number(req.params.id));
+    if (!row) return next();
+    const raw = String(row.processing_status || '').trim();
+    const normalized = ['Đã sửa xong', 'Bàn giao sử dụng', 'Hoàn thành'].includes(raw)
+      ? 'Đã hoàn thành'
+      : (['Hủy', 'Huỷ', 'Đã huỷ'].includes(raw) ? 'Đã hủy' : raw);
+    if (['Đã hoàn thành', 'Không sửa được', 'Đã hủy'].includes(normalized)) {
+      return res.status(409).json({
+        error: 'Phiếu sửa chữa đã kết thúc nên không thể hủy trực tiếp. Hãy bổ sung/cập nhật hồ sơ để bảo toàn lịch sử thiết bị.'
+      });
+    }
+    return next();
+  });
+
   app.use('/api', (req, res, next) => {
     if (req.method !== 'GET') return next();
     const user = getUser(req);
