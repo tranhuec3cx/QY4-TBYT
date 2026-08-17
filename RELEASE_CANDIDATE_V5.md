@@ -20,28 +20,30 @@ Mục tiêu của RC1 là đóng băng chức năng, kiểm tra lại toàn bộ
 - QR công khai dùng payload tối thiểu và token HMAC gắn đúng thiết bị.
 - `trust proxy` mặc định an toàn, chỉ bật khi cấu hình rõ.
 - Excel dùng ExcelJS + compatibility layer, không dùng package `xlsx` cũ.
+- Logo Bệnh viện Quân y 4 đã được bổ sung tại `public/assets/BVQY4.jpg`.
 
 ## 2. Checklist trước khi merge vào main
 
 ### Tự động - bắt buộc PASS
 
-- [ ] `npm ci`
-- [ ] `npm audit --omit=dev` = 0 vulnerability
-- [ ] `npm run check:safety`
-- [ ] `npm run test:p2`
-- [ ] `npm run test:p3:excel`
-- [ ] `npm run test:p3:reports`
-- [ ] `npm run test:p4:ui`
-- [ ] `npm run test:p4:role`
-- [ ] `npm run test:p4:dashboard`
-- [ ] `npm run test:p4:scope`
-- [ ] `npm run test:p5:qr`
-- [ ] `npm run test:p6:proxy`
-- [ ] `npm run test:p7:qr`
-- [ ] `npm run test:p7:client`
-- [ ] Khởi động DB production trắng: chỉ có danh mục nền + admin, không có thiết bị demo.
-- [ ] Khởi động DEMO_MODE và kiểm tra hủy mềm Bảo dưỡng/Kiểm định.
-- [ ] Không có `.sqlite`, `.sqlite-wal`, `.sqlite-shm`, `.env` hoặc `node_modules` được theo dõi trong Git.
+- [x] `npm ci`
+- [x] `npm audit --omit=dev` = 0 vulnerability
+- [x] `npm run check:safety`
+- [x] `npm run test:p2`
+- [x] `npm run test:p3:excel`
+- [x] `npm run test:p3:reports`
+- [x] `npm run test:p4:ui`
+- [x] `npm run test:p4:role`
+- [x] `npm run test:p4:dashboard`
+- [x] `npm run test:p4:scope`
+- [x] `npm run test:p5:qr`
+- [x] `npm run test:p6:proxy`
+- [x] `npm run test:p7:qr`
+- [x] `npm run test:p7:client`
+- [x] Khởi động DB production trắng: chỉ có danh mục nền + admin, không có thiết bị demo.
+- [x] Khởi động DEMO_MODE và kiểm tra hủy mềm Bảo dưỡng/Kiểm định.
+- [x] Không có `.sqlite`, `.sqlite-wal`, `.sqlite-shm`, `.env` hoặc `node_modules` được theo dõi trong Git.
+- [x] Có `public/assets/BVQY4.jpg` để hiển thị logo bệnh viện.
 
 ### Thủ công - trước khi chạy dữ liệu thật
 
@@ -56,7 +58,7 @@ Mục tiêu của RC1 là đóng băng chức năng, kiểm tra lại toàn bộ
 - [ ] Thử xuất ít nhất 01 báo cáo Excel.
 - [ ] Thử in QR mới và quét bằng điện thoại.
 - [ ] Nếu dùng reverse proxy/tunnel, cấu hình `TRUST_PROXY` đúng số hop; nếu chạy trực tiếp/LAN giữ `false`.
-- [ ] Kiểm tra logo giao diện. Hiện `public/assets/BVQY4.jpg` chưa có trong repo mới; đây là hạng mục giao diện cần bổ sung trước khi bàn giao chính thức nếu muốn hiển thị logo bệnh viện.
+- [x] Kiểm tra logo giao diện: `public/assets/BVQY4.jpg` đã được bổ sung từ logo chính thức do người dùng cung cấp.
 
 ## 3. Thứ tự merge bắt buộc
 
