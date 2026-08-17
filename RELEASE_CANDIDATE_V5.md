@@ -48,19 +48,41 @@ Mục tiêu của RC1 là đóng băng chức năng, kiểm tra lại toàn bộ
 ### Thủ công - trước khi chạy dữ liệu thật
 
 - [ ] Tạo `.env` production với mật khẩu admin ban đầu mạnh.
-- [ ] Đổi mật khẩu admin ngay lần đăng nhập đầu.
+- [x] Đăng nhập admin trên máy Windows nghiệm thu và đổi mật khẩu lần đầu.
 - [ ] Sao lưu `db/qy4_ttbyt.sqlite` trước khi nâng cấp dữ liệu thật.
 - [ ] Sao lưu `db/qr-signing-secret` cùng database.
 - [ ] Sao lưu thư mục `uploads/`.
 - [ ] Kiểm tra quyền truy cập của tài khoản Khoa Trang bị và tài khoản khoa sử dụng.
-- [ ] Thử đầy đủ: tạo thiết bị -> báo sự cố -> chuyển sửa chữa -> hoàn thành/hủy -> kiểm tra lịch sử.
-- [ ] Thử tạo Bảo dưỡng, Kiểm định, hủy mềm và xác nhận lịch sử vẫn còn trong DB.
-- [ ] Thử xuất ít nhất 01 báo cáo Excel.
+- [x] Thử đầy đủ: tạo thiết bị -> báo sự cố -> chuyển sửa chữa -> cập nhật -> hoàn thành -> kiểm tra lịch sử.
+- [x] Thử tạo Bảo dưỡng và Kiểm định, xác nhận bản ghi liên kết đúng thiết bị.
+- [ ] Thử hủy mềm Bảo dưỡng/Kiểm định trên máy nghiệm thu và xác nhận lịch sử vẫn còn trong DB.
+- [ ] Thử báo cáo Excel A4 chính thức từ Trung tâm Báo cáo; dữ liệu báo cáo và một file Excel nghiệp vụ đã được xác nhận đúng, còn kiểm tra trình bày A4.
 - [ ] Thử in QR mới và quét bằng điện thoại.
 - [ ] Nếu dùng reverse proxy/tunnel, cấu hình `TRUST_PROXY` đúng số hop; nếu chạy trực tiếp/LAN giữ `false`.
 - [x] Kiểm tra logo giao diện: `public/assets/BVQY4.jpg` đã được bổ sung từ logo chính thức do người dùng cung cấp.
 
-## 3. Thứ tự merge bắt buộc
+## 3. Nghiệm thu thực tế trên Windows - 17/08/2026
+
+Đã kiểm tra với Node.js 20.20.1, npm 10.8.2 và database production trắng:
+
+- [x] `npm ci`: 0 vulnerability.
+- [x] Màn hình đăng nhập và logo Bệnh viện Quân y 4 hiển thị đúng.
+- [x] Tạo thiết bị mẫu `C7.SA.0001`, Serial `TEST26081701`; Serial được giữ độc lập, không bị chuyển sang mã BHXH.
+- [x] Tạo sự cố -> Chuyển sửa chữa -> phiếu liên kết đúng sự cố/thiết bị.
+- [x] Cập nhật sửa chữa -> hoàn thành -> thiết bị tự trở về `Đang hoạt động`.
+- [x] Timeline sửa chữa giữ đúng các mốc 08:05 -> 08:06 -> 08:10.
+- [x] Bảo dưỡng định kỳ lưu đúng thiết bị, khoa, ngày tiếp theo và kết quả.
+- [x] Kiểm định lưu đúng thiết bị, đơn vị, ngày hết hạn và tự hiển thị `Còn hạn`.
+- [x] Trung tâm Báo cáo phản ánh đúng 01 thiết bị, 01 phiếu sửa chữa, 01 lịch bảo dưỡng, 01 lịch kiểm định.
+
+Lỗi phát hiện qua nghiệm thu và đã vá trên nhánh RC:
+
+- [x] Sửa lệch 7 giờ ở `Thời gian cập nhật/thực hiện` của phiếu sửa chữa: dùng giờ địa phương của máy trạm thay vì UTC.
+- [x] Sửa ô chọn thiết bị bằng datalist ở Bảo dưỡng và Kiểm định: chọn gợi ý/Tab/Enter/blur đều chốt đúng thiết bị và điền Khoa/Vị trí.
+- [x] Phiếu sửa chữa đã kết thúc (`Đã hoàn thành`, `Không sửa được`, `Đã hủy`) không còn cho hủy trực tiếp trên giao diện RC để bảo toàn lịch sử.
+- [x] Các nút xuất Excel chính của Thiết bị/Sự cố/Sửa chữa/Bảo dưỡng/Kiểm định đều trỏ về engine `export-a4`; Trung tâm Báo cáo cũng dùng cùng engine.
+
+## 4. Thứ tự merge bắt buộc
 
 Các PR hiện được xếp chồng theo branch. Không merge nhảy cóc.
 
@@ -78,7 +100,7 @@ Các PR hiện được xếp chồng theo branch. Không merge nhảy cóc.
 
 Sau khi merge tuần tự, kiểm tra lại `main` bằng cùng RC workflow trước khi gắn bản phát hành.
 
-## 4. Không thực hiện trong RC1
+## 5. Không thực hiện trong RC1
 
 - Không đổi cấu trúc database lớn nếu không có migration/test riêng.
 - Không thêm tính năng mới ngoài sửa lỗi phát hiện trong smoke test.
