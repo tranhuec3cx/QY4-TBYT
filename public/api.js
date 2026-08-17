@@ -44,8 +44,8 @@ function renderMenu(active) {
   return `
     <aside class="sidebar">
       <div class="brand">
-        <img src="assets/BVQY4.jpg" alt="Logo Bệnh viện Quân y 4" />
-        <div><h1>QUẢN LÝ TTBYT</h1></div>
+        <img src="/assets/BVQY4.jpg" alt="Logo Bệnh viện Quân y 4" style="width:68px;height:68px;flex:0 0 68px" />
+        <div><h1>QUẢN LÝ TBYT</h1></div>
       </div>
       <nav class="menu">${links}</nav>
       <div class="sidebar-footer">
