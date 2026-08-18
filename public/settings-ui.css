@@ -34,7 +34,8 @@
 gap:9px 10px!important;align-items:end!important;overflow:visible!important;padding-bottom:0!important;}
 .device-filter-grid-v2 .filter-control{display:flex;flex-direction:column;gap:4px;min-width:0;}
 .device-filter-grid-v2 .filter-control>span{font-size:11.5px;font-weight:800;color:#425d75;white-space:nowrap;}
-.device-filter-grid-v2 input,.device-filter-grid-v2 select{width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;padding:7px 9px!important;border-radius:8px!important;text-overflow:ellipsis;}
+.device-filter-grid-v2 input,.device-filter-grid-v2 select{width:100%!important;min-width:0!important;height:38px!important;min-height:38px!important;padding:7px 9px!important;border-radius:8px!important;text-overflow:ellipsis;flex:0 0 auto!important;}
+.device-filter-grid-v2 #searchInput{flex:0 0 auto!important;min-width:0!important;height:38px!important;min-height:38px!important;}
 .device-filter-grid-v2 .filter-search{grid-area:search}.device-filter-grid-v2 .filter-department{grid-area:department}.device-filter-grid-v2 .filter-group{grid-area:group}.device-filter-grid-v2 .filter-year{grid-area:year}.device-filter-grid-v2 .filter-status{grid-area:status}.device-filter-grid-v2 .filter-quality{grid-area:quality}.device-filter-grid-v2 .filter-funding{grid-area:funding}
 .device-filter-grid-v2 #filterBtn{grid-area:filter;min-height:38px!important;height:38px!important;align-self:end;}
 .device-filter-grid-v2 #resetBtn{grid-area:reset;min-height:38px!important;height:38px!important;padding:7px 12px!important;align-self:end;}
