@@ -1,4 +1,53 @@
 const crypto = require('crypto');
+const multer = require('multer');
+const ExcelJS = require('exceljs');
+
+const importUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 }
+});
+
+function excelImportValue(cell) {
+  const value = cell?.value;
+  if (value == null) return '';
+  if (value instanceof Date) return value;
+  if (typeof value === 'object') {
+    if (Object.prototype.hasOwnProperty.call(value, 'result')) return value.result ?? '';
+    if (Array.isArray(value.richText)) return value.richText.map(x => x.text || '').join('');
+    if (Object.prototype.hasOwnProperty.call(value, 'text')) return value.text ?? '';
+    if (Object.prototype.hasOwnProperty.call(value, 'hyperlink')) return value.text || value.hyperlink || '';
+  }
+  return value;
+}
+
+async function parseImportWorkbook(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(Buffer.from(buffer));
+  const sheet = workbook.getWorksheet('IMPORT_READY') || workbook.getWorksheet('NHAP_THIET_BI') || workbook.worksheets[0];
+  if (!sheet) throw new Error('File Excel không có sheet dữ liệu.');
+
+  const headers = [];
+  sheet.getRow(1).eachCell({ includeEmpty: true }, (cell, col) => {
+    headers[col] = String(cell.text || excelImportValue(cell) || '').trim();
+  });
+  if (!headers.some(Boolean)) throw new Error('Không đọc được hàng tiêu đề của file Excel.');
+
+  const rows = [];
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const obj = {};
+    let hasData = false;
+    headers.forEach((header, col) => {
+      if (!header) return;
+      const cell = row.getCell(col);
+      const value = excelImportValue(cell);
+      obj[header] = value;
+      if (value !== '' && value != null) hasData = true;
+    });
+    if (hasData) rows.push(obj);
+  });
+  return { sheetName: sheet.name, rows };
+}
 
 function attach({ app, Database, dbPath, getUser, isTech }) {
   let conn = null;
@@ -51,6 +100,36 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
     // phục hồi req.url về dạng /api/... nên không dùng req.path động trong res.json.
     const scopedPath = req.path;
     const user = getUser(req);
+
+    // ===== Nhập Excel thiết bị =====
+    // Đọc workbook ở server bằng ExcelJS document reader. Cách này tránh lỗi browser
+    // "Cannot read properties of undefined (reading 'sheets')" khi ExcelJS 4.4 đọc
+    // một số workbook có cấu trúc ZIP/relationship không tương thích ổn định.
+    if (scopedPath === '/import/devices/preview') {
+      if (!user) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+      if (!isSettingsUser(user)) return res.status(403).json({ error: 'Chỉ Quản trị viên hoặc Khoa Trang bị được nhập Excel thiết bị.' });
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
+
+      return importUpload.single('file')(req, res, async (uploadErr) => {
+        if (uploadErr) {
+          const msg = uploadErr.code === 'LIMIT_FILE_SIZE'
+            ? 'File Excel vượt quá 25 MB.'
+            : (uploadErr.message || 'Không nhận được file Excel.');
+          return res.status(400).json({ error: msg });
+        }
+        try {
+          if (!req.file?.buffer) return res.status(400).json({ error: 'Chưa chọn file Excel.' });
+          if (!/\.xlsx$/i.test(String(req.file.originalname || ''))) {
+            return res.status(400).json({ error: 'Chỉ hỗ trợ file Excel định dạng .xlsx.' });
+          }
+          const parsed = await parseImportWorkbook(req.file.buffer);
+          if (parsed.rows.length > 5000) return res.status(400).json({ error: 'File có quá 5.000 dòng dữ liệu; vui lòng chia nhỏ trước khi nhập.' });
+          return res.json(parsed);
+        } catch (e) {
+          return res.status(400).json({ error: `Không đọc được file Excel: ${e.message || 'file không hợp lệ'}` });
+        }
+      });
+    }
 
     // ===== Cài đặt / tài khoản =====
     // Server lõi vẫn giữ API /api/users cũ để tương thích, nhưng mọi request tới
