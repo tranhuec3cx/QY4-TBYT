@@ -13,7 +13,7 @@
     "check:p3": "node p8-safety-check.js",
     "check:safety": "node p8-safety-check.js",
     "test:p2": "node test-p2-security.js",
-    "test:p3:excel": "node test-p3-excel.js",
+    "test:p3:excel": "node test-p3-excel.js && node test-import-xlsx-raw.js",
     "test:p3:reports": "node test-p3-reports.js",
     "test:p4:ui": "node test-p4-ui.js",
     "test:p4:role": "node test-p4-role-ui.js",
