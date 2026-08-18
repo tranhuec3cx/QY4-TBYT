@@ -234,21 +234,13 @@ function analyzeRows(rows) {
     if (serialKey && (uploadSerialCounts.get(serialKey) || 0) > 1) issues.push('Trùng Serial trong file');
 
     const existingDept = r.departmentCode ? departments.get(r.departmentCode) : null;
-    if (r.departmentCode && existingDept) {
-      const incoming = normalizedName(r.departmentName || r.departmentLabel);
-      const current = normalizedName(existingDept.name);
-      if (incoming && current && incoming !== current) issues.push(`Mã khoa ${r.departmentCode} đang có tên khác trong hệ thống`);
-    } else if (r.departmentCode) {
+    if (r.departmentCode && !existingDept) {
       if (autoCreate && r.departmentName) missingDepartments.set(r.departmentCode, { code:r.departmentCode, name:r.departmentName });
       else issues.push(`Khoa ${r.departmentCode} chưa có trong hệ thống`);
     }
 
     const existingGroup = r.groupCode ? groups.get(r.groupCode) : null;
-    if (r.groupCode && existingGroup) {
-      if (r.groupName && normalizedName(existingGroup.name) !== normalizedName(r.groupName)) {
-        issues.push(`Mã nhóm ${r.groupCode} đang có tên khác trong hệ thống`);
-      }
-    } else if (r.groupCode) {
+    if (r.groupCode && !existingGroup) {
       if (autoCreate && r.groupName) missingGroups.set(r.groupCode, { code:r.groupCode, name:r.groupName });
       else issues.push(`Nhóm ${r.groupCode} chưa có trong hệ thống`);
     }
