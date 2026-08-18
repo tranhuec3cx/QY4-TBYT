@@ -19,6 +19,7 @@
     .import-stat span{display:block;color:#607086;font-size:12px}
     .import-stat b{display:block;margin-top:3px;font-size:22px;color:#075aaa}
     .import-meta{display:grid;gap:4px;color:#5a6a7e;font-size:13px}
+    .reader-build{font-weight:700;color:#0b5bb5}
     .import-message{min-height:20px;padding:9px 12px;border-radius:8px;font-weight:600}
     .import-message:empty{display:none}
     .import-message.info{background:#eef5ff;color:#174f8d}
@@ -92,6 +93,7 @@
         <div class="import-meta">
           <span id="sheetInfo">Chưa chọn file.</span>
           <span id="catalogInfo">Danh mục sẽ được đối chiếu khi kiểm tra file.</span>
+          <span id="readerBuildInfo" class="reader-build">Bộ đọc XLSX: RAW-V2 / 2026-08-19</span>
         </div>
         <div id="importMessage" class="import-message info"></div>
         <div class="import-progress">
@@ -130,6 +132,6 @@
   <script src="/api.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/import-export.js"></script>
-  <script src="/import-excel-server-reader.js"></script>
+  <script src="/import-excel-server-reader.js?v=raw-v2-20260819"></script>
 </body>
 </html>
