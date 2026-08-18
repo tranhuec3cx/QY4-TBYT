@@ -4,8 +4,18 @@ const assert = require('assert');
 
 const devicesSource = fs.readFileSync('public/devices.js', 'utf8');
 const detailFixSource = fs.readFileSync('public/device-detail-p3-fix.js', 'utf8');
+const categoriesSource = fs.readFileSync('public/categories.js', 'utf8');
+const p7ClientSource = fs.readFileSync('public/p7-qr-client.js', 'utf8');
+const scopeGuardSource = fs.readFileSync('p2-scope-guard.js', 'utf8');
+const settingsHtml = fs.readFileSync('public/settings.html', 'utf8');
+const devicesHtml = fs.readFileSync('public/index.html', 'utf8');
+const settingsCss = fs.readFileSync('public/settings-ui.css', 'utf8');
+
 new Function(devicesSource);
 new Function(detailFixSource);
+new Function(categoriesSource);
+new Function(p7ClientSource);
+new Function(scopeGuardSource);
 
 // Bảng Thiết bị: dữ liệu nhập có HTML không được trở thành thẻ thực thi.
 const deviceNodes = {
@@ -91,4 +101,18 @@ assert.ok(capturedDuringRender.documents[0].name.includes('&lt;img'), 'Tên tài
 assert.strictEqual(detailCtx.DEVICE, originalDevice, 'Sau render phải trả DEVICE về dữ liệu gốc.');
 assert.ok(detailNodes.detailStatus.innerHTML.includes('&lt;img'), 'Trạng thái chi tiết phải được escape.');
 
-console.log('[P4 UI] PASS - bảng Thiết bị và các vùng legacy của Hồ sơ máy không render HTML thô từ dữ liệu nhập.');
+// Cài đặt v5: ba nhóm chức năng, quyền quản trị tài khoản và bộ lọc Thiết bị hai hàng.
+assert.ok(settingsHtml.includes('data-tab="departments"'), 'Cài đặt phải có tab Khoa/Phòng.');
+assert.ok(settingsHtml.includes('data-tab="groups"'), 'Cài đặt phải có tab Nhóm thiết bị.');
+assert.ok(settingsHtml.includes('data-tab="users"'), 'Cài đặt phải có tab Tài khoản người dùng.');
+assert.ok(settingsHtml.includes('id="userForm"') && settingsHtml.includes('id="userRole"'), 'Cài đặt phải có form tài khoản.');
+assert.ok(categoriesSource.includes("api('/api/users')") && categoriesSource.includes('/reset-password'), 'Giao diện tài khoản phải dùng API bảo vệ và hỗ trợ cấp lại mật khẩu.');
+assert.ok(categoriesSource.includes('cleanDepartmentName') && categoriesSource.includes('departmentLabel'), 'Phải chuẩn hóa hiển thị mã/tên khoa, tránh A1 - A1.');
+assert.ok(p7ClientSource.includes('settingsMenuLink') && p7ClientSource.includes('optDepartmentFilter'), 'Menu chung phải có Cài đặt theo quyền và khóa lỗi tên khoa.');
+assert.ok(scopeGuardSource.includes('Chỉ Quản trị viên được quản lý tài khoản người dùng.'), 'API tài khoản phải giới hạn Quản trị viên.');
+assert.ok(scopeGuardSource.includes("crypto.scryptSync") && scopeGuardSource.includes('password_salt,password_hash'), 'Tài khoản mới phải lưu mật khẩu dạng salt/hash.');
+assert.ok(scopeGuardSource.includes('Không xóa tài khoản để bảo toàn nhật ký'), 'Không được xóa cứng tài khoản người dùng.');
+assert.ok(devicesHtml.includes('device-filter-grid-v2') && devicesHtml.includes('/settings-ui.css'), 'Màn Thiết bị phải dùng bộ lọc mới có nhãn.');
+assert.ok(settingsCss.includes('grid-template-areas') && settingsCss.includes('search search search search'), 'Bộ lọc Thiết bị phải được bố trí theo hai hàng desktop.');
+
+console.log('[P4 UI] PASS - escape dữ liệu, Cài đặt v5 và bộ lọc Thiết bị đã được khóa bằng test.');
