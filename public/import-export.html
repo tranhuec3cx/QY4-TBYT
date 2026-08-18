@@ -3,8 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quản lý TTBYT - Bệnh viện Quân y 4</title>
+  <title>Nhập Excel - QY4 TBYT</title>
   <link rel="stylesheet" href="/styles.css" />
+  <style>
+    .import-shell{display:grid;gap:14px}
+    .import-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .import-step{border:1px solid #d7e3f1;border-radius:12px;padding:12px;background:#f9fbfe}
+    .import-step b{display:block;color:#0b5bb5;margin-bottom:4px}
+    .import-file-row{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;gap:10px;align-items:end}
+    .import-file-row label{display:grid;gap:6px;font-weight:600}
+    .import-file-row input[type=file]{width:100%;padding:9px;border:1px solid #cbd9e8;border-radius:8px;background:white}
+    .import-options{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+    .import-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+    .import-stat{border:1px solid #cfe0f1;border-left:4px solid #0b6dcc;border-radius:12px;padding:12px 14px;background:white;text-align:center}
+    .import-stat span{display:block;color:#607086;font-size:12px}
+    .import-stat b{display:block;margin-top:3px;font-size:22px;color:#075aaa}
+    .import-meta{display:grid;gap:4px;color:#5a6a7e;font-size:13px}
+    .import-message{min-height:20px;padding:9px 12px;border-radius:8px;font-weight:600}
+    .import-message:empty{display:none}
+    .import-message.info{background:#eef5ff;color:#174f8d}
+    .import-message.success{background:#e9f8ee;color:#18733a}
+    .import-message.error{background:#fff0ef;color:#b12b25}
+    .import-progress{display:flex;align-items:center;gap:12px}
+    .import-progress-track{height:10px;background:#e7edf5;border-radius:999px;overflow:hidden;flex:1}
+    #progressBar{height:100%;width:0;background:#0b6dcc;transition:width .18s ease}
+    #progressText{min-width:90px;text-align:right;font-variant-numeric:tabular-nums}
+    .import-preview table{min-width:1180px}
+    .import-preview th:nth-child(5){min-width:300px}
+    .import-preview th:nth-child(8){min-width:270px}
+    .import-issue{font-size:12px;line-height:1.35}
+    .center-empty{text-align:center;color:#7b8794;padding:18px}
+    .import-note{padding:10px 12px;border-radius:8px;background:#fff8e6;color:#775500;font-size:13px}
+    @media(max-width:1000px){
+      .import-guide,.import-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .import-file-row{grid-template-columns:1fr 1fr}
+    }
+  </style>
 </head>
 <body>
   <div class="layout">
@@ -15,36 +49,86 @@
           <h1 id="pageTitle" class="page-title"></h1>
           <p id="pageSubtitle" class="page-subtitle"></p>
         </div>
-        <div class="user-box">Người dùng: Quản trị viên</div>
+        <div class="page-actions">
+          <a class="btn" href="/index.html">Danh sách thiết bị</a>
+        </div>
       </div>
-      
-<section class="grid-2">
-  <div class="card">
-    <h3 class="section-title">Xuất dữ liệu</h3><div class="small" style="margin-top:-6px;margin-bottom:14px">Xuất nhanh dữ liệu hiện có để sao lưu hoặc gửi báo cáo</div>
-    <div class="form-actions">
-      <button class="btn" id="exportDevicesBtn">Xuất toàn bộ thiết bị CSV</button>
-      <button class="btn" id="exportUsersBtn">Xuất người dùng CSV</button>
-    </div>
-    <div class="progress-list" style="margin-top:16px">
-      <div class="progress-item"><b>File cơ sở dữ liệu</b><div class="small">db/qy4_ttbyt.sqlite</div></div>
-      <div class="progress-item"><b>Cách sao lưu nhanh</b><div class="small">Đóng phần mềm và copy file SQLite sang nơi lưu trữ khác.</div></div>
-      <div class="progress-item"><b>Khôi phục dữ liệu mẫu</b><div class="small">Dùng nút bên phải để nạp lại 20 thiết bị mẫu ban đầu.</div></div>
-    </div>
-  </div>
-  <div class="card">
-    <h3 class="section-title">Khôi phục dữ liệu mẫu</h3><div class="small" style="margin-top:-6px;margin-bottom:14px">Dùng khi cần nạp lại bộ dữ liệu minh họa ban đầu</div>
-    <p class="small">Thao tác này sẽ xóa dữ liệu hiện tại trong SQLite và nạp lại bộ dữ liệu mẫu.</p>
-    <div class="form-actions">
-      <button class="btn btn-danger" id="resetBtn">Khôi phục dữ liệu mẫu</button>
-    </div>
-    <hr style="border:none;border-top:1px solid #e5edf6;margin:18px 0" />
-    <p class="small">Bản v4 này đã chuyển sang dùng SQLite thật. Nếu bước tiếp theo anh/chị muốn, có thể làm thêm nhập Excel .xlsx và upload tài liệu đính kèm.</p>
-  </div>
-</section>
 
+      <section class="card import-shell">
+        <div class="import-guide">
+          <div class="import-step"><b>1. Chọn file</b><span>Ưu tiên file có sheet <strong>IMPORT_READY</strong>.</span></div>
+          <div class="import-step"><b>2. Kiểm tra</b><span>Đối chiếu 4 trường bắt buộc, Serial và danh mục.</span></div>
+          <div class="import-step"><b>3. Xem trước</b><span>Các dòng lỗi hoặc đã tồn tại không được nhập.</span></div>
+          <div class="import-step"><b>4. Nhập chính thức</b><span>Thiết bị được tạo tuần tự để bảo đảm an toàn SQLite.</span></div>
+        </div>
+
+        <div class="import-file-row">
+          <label>
+            <span>File Excel (.xlsx)</span>
+            <input id="excelFile" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+          </label>
+          <button class="btn" id="checkBtn" type="button">Kiểm tra file</button>
+          <button class="btn btn-primary" id="importBtn" type="button" disabled>Nhập chính thức</button>
+          <button class="btn" id="resetImportBtn" type="button">Đặt lại</button>
+        </div>
+
+        <div class="import-options">
+          <label><input id="autoCreateCatalogs" type="checkbox" checked /> Tự bổ sung Khoa/Phòng và Nhóm thiết bị còn thiếu từ file</label>
+        </div>
+        <div class="import-note">
+          File được kiểm tra theo 4 trường bắt buộc: <b>Khoa/Phòng, Nhóm thiết bị, Tên thiết bị, Serial Number</b>.
+          Serial đã có trong hệ thống sẽ tự động bỏ qua, không tạo bản ghi trùng.
+        </div>
+      </section>
+
+      <section class="import-stats">
+        <div class="import-stat"><span>Tổng dòng</span><b id="statTotal">0</b></div>
+        <div class="import-stat"><span>Sẵn sàng nhập</span><b id="statReady">0</b></div>
+        <div class="import-stat"><span>Đã tồn tại</span><b id="statExisting">0</b></div>
+        <div class="import-stat"><span>Cần sửa</span><b id="statError">0</b></div>
+      </section>
+
+      <section class="card import-shell">
+        <div class="import-meta">
+          <span id="sheetInfo">Chưa chọn file.</span>
+          <span id="catalogInfo">Danh mục sẽ được đối chiếu khi kiểm tra file.</span>
+        </div>
+        <div id="importMessage" class="import-message info"></div>
+        <div class="import-progress">
+          <div class="import-progress-track"><div id="progressBar"></div></div>
+          <span id="progressText">0/0</span>
+        </div>
+      </section>
+
+      <section class="card import-preview">
+        <div class="table-card-header">
+          <h3>Xem trước dữ liệu</h3>
+          <button class="btn" id="exportCurrentBtn" type="button">Xuất thiết bị hiện có CSV</button>
+        </div>
+        <div class="table-wrap scroll-area">
+          <table>
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>STT nguồn</th>
+                <th>Khoa</th>
+                <th>Nhóm</th>
+                <th>Tên thiết bị</th>
+                <th>Serial Number</th>
+                <th>Kết quả</th>
+                <th>Ghi chú kiểm tra</th>
+              </tr>
+            </thead>
+            <tbody id="previewRows">
+              <tr><td colspan="8" class="center-empty">Chưa có dữ liệu để xem trước.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </main>
   </div>
   <script src="/api.js"></script>
+  <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/import-export.js"></script>
 </body>
 </html>
