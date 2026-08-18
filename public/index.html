@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quản lý TTBYT</title>
+  <title>Quản lý TBYT</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/settings-ui.css" />
 </head>
 <body>
   <div class="layout">
@@ -15,23 +16,25 @@
           <h1 id="pageTitle" class="page-title"></h1>
           <p id="pageSubtitle" class="page-subtitle"></p>
         </div>
-        <div class="page-actions"><button class="btn btn-primary" onclick="document.getElementById('formCard').scrollIntoView({behavior:'smooth'})">+ Thêm thiết bị</button></div>
+        <div class="page-actions">
+          <a class="btn device-settings-shortcut" id="deviceSettingsBtn" href="/settings.html#groups">Cài đặt danh mục</a>
+          <button class="btn btn-primary" onclick="document.getElementById('formCard').scrollIntoView({behavior:'smooth'})">+ Thêm thiết bị</button>
+        </div>
       </div>
       
 <section class="card">
-  <div class="filters device-filter-row">
-    <input id="searchInput" type="text" placeholder="Tìm mã thiết bị / tên thiết bị / Serial Number" />
-    <select id="departmentFilter"></select>
-    <select id="groupFilter"></select>
-    <select id="yearFilter"></select>
-    <select id="statusFilter"></select>
-    <select id="qualityFilter"></select>
-    <select id="fundingFilter"></select>
-    <button class="btn" id="filterBtn">Lọc</button>
+  <div class="filters device-filter-row device-filter-grid-v2">
+    <label class="filter-control filter-search"><span>Tìm kiếm</span><input id="searchInput" type="text" placeholder="Mã thiết bị / tên thiết bị / Serial Number" /></label>
+    <label class="filter-control filter-department"><span>Khoa / Phòng</span><select id="departmentFilter"></select></label>
+    <label class="filter-control filter-group"><span>Nhóm thiết bị</span><select id="groupFilter"></select></label>
+    <label class="filter-control filter-year"><span>Năm sử dụng</span><select id="yearFilter"></select></label>
+    <label class="filter-control filter-status"><span>Tình trạng</span><select id="statusFilter"></select></label>
+    <label class="filter-control filter-quality"><span>Cấp chất lượng</span><select id="qualityFilter"></select></label>
+    <label class="filter-control filter-funding"><span>Nguồn kinh phí</span><select id="fundingFilter"></select></label>
+    <button class="btn btn-primary" id="filterBtn">Lọc</button>
     <button class="btn" id="resetBtn">Đặt lại</button>
   </div>
 </section>
-
 
 <section class="card technical-card">
   <div class="table-card-header technical-table-title">
@@ -47,7 +50,10 @@
 </section>
 
 <section id="formCard" class="card">
-  <div class="table-card-header"><h3>Thêm / cập nhật thiết bị</h3></div>
+  <div class="table-card-header">
+    <h3>Thêm / cập nhật thiết bị</h3>
+    <a class="btn" href="/settings.html#groups">Quản lý Khoa / Nhóm</a>
+  </div>
   <form id="deviceForm">
     <input type="hidden" id="deviceId" />
     <div class="form-grid">

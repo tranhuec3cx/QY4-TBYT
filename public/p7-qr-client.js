@@ -1,4 +1,4 @@
-// P7 - lớp tương thích QR có chữ ký. Được nối sau public/api.js khi server chạy qua p7-start.js.
+// P7 - lớp tương thích QR có chữ ký. Được nối sau public/api.js khi server chạy.
 (function () {
   if (typeof window === 'undefined') return;
 
@@ -35,4 +35,52 @@
       }
     };
   }
+
+  // ===== Cài đặt hệ thống =====
+  // Giữ api.js lõi ổn định: thêm mục Cài đặt tại lớp runtime chung đã được nạp trên mọi màn hình.
+  if (typeof renderMenu === 'function') {
+    const originalRenderMenu = renderMenu;
+    renderMenu = function qy4RenderMenuWithSettings(active) {
+      const html = originalRenderMenu(active);
+      const settingsLink = `<a id="settingsMenuLink" class="settings-menu-link hidden ${active === 'settings' ? 'active' : ''}" href="/settings.html"><span class="menu-icon">⚙</span><span>Cài đặt</span></a>`;
+      return html.replace('</nav>', `${settingsLink}</nav>`);
+    };
+  }
+
+  // Loại lỗi hiển thị “A1 - A1 - Khoa Quốc tế” khi dữ liệu tên khoa đã chứa mã.
+  if (typeof optDepartmentFilter === 'function') {
+    optDepartmentFilter = function qy4DepartmentOptions(list, allLabel = null, selected = 'ALL') {
+      const rows = allLabel ? [{ code:'ALL', name:allLabel }, ...(list || [])] : (list || []);
+      return rows.map(x => {
+        const code = String(x.code || '').trim();
+        let name = String(x.name || '').trim();
+        if (code !== 'ALL' && code) {
+          const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          name = name.replace(new RegExp(`^${escaped}\\s*[-–—:]\\s*`, 'i'), '').trim();
+        }
+        const label = code === 'ALL' ? name : (name ? `${code} - ${name}` : code);
+        return `<option value="${code}" ${String(code) === String(selected) ? 'selected' : ''}>${label}</option>`;
+      }).join('');
+    };
+  }
+
+  function canOpenSettings(user) {
+    const role = String(user?.role || '');
+    return /quản trị|kỹ|ky|trang bị|ttbyt/i.test(role);
+  }
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const result = await api('/api/auth/me');
+      const user = result?.user || null;
+      const allowed = canOpenSettings(user);
+      const menuLink = document.getElementById('settingsMenuLink');
+      if (menuLink) menuLink.classList.toggle('hidden', !allowed);
+      const deviceShortcut = document.getElementById('deviceSettingsBtn');
+      if (deviceShortcut) deviceShortcut.classList.toggle('hidden', !allowed);
+    } catch {
+      document.getElementById('settingsMenuLink')?.classList.add('hidden');
+      document.getElementById('deviceSettingsBtn')?.classList.add('hidden');
+    }
+  });
 })();
