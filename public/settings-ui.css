@@ -17,6 +17,11 @@
 .settings-table-wrap th,.settings-table-wrap td{vertical-align:middle;}
 .settings-table-wrap .center-number{text-align:center;font-weight:800;}
 .settings-users-table{min-width:1100px;}
+.settings-groups-table{min-width:1180px;}
+.settings-hint-cell{max-width:250px;}
+.settings-group-hint{display:block;max-width:250px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#284d6d;}
+.settings-serial-cell .settings-group-hint{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-weight:700;color:#0b4f94;}
+.settings-empty-hint{color:#93a5b5;}
 .settings-form-card{margin-top:14px;padding:14px;border:1px solid #e2ebf4;border-radius:12px;background:#fbfdff;}
 .settings-form-card h4{margin:0 0 12px;color:#0b3a5e;font-size:15px;}
 .settings-form-grid{display:grid;gap:10px;}
