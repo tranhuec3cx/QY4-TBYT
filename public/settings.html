@@ -71,12 +71,12 @@
           </div>
         </div>
         <div class="settings-toolbar">
-          <input id="groupSearch" placeholder="Tìm mã nhóm hoặc tên nhóm thiết bị" />
+          <input id="groupSearch" placeholder="Tìm mã nhóm, tên nhóm, Model hoặc Serial Number" />
           <button class="btn" id="groupFilterBtn" type="button">Lọc</button>
         </div>
         <div class="table-wrap settings-table-wrap">
-          <table>
-            <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm thiết bị</th><th>Số thiết bị</th><th>Thao tác</th></tr></thead>
+          <table class="settings-groups-table">
+            <thead><tr><th>STT</th><th>Mã nhóm</th><th>Tên nhóm thiết bị</th><th>Số thiết bị</th><th>Model (gợi ý)</th><th>Serial Number</th><th>Thao tác</th></tr></thead>
             <tbody id="groupRows"></tbody>
           </table>
         </div>
@@ -147,5 +147,6 @@
   </div>
   <script src="/api.js"></script>
   <script src="/categories.js"></script>
+  <script src="/settings-group-device-hints.js"></script>
 </body>
 </html>
