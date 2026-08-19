@@ -1,6 +1,9 @@
 name: Apply Device Code Unicode Fix
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - fix/device-code-unicode-get
@@ -12,6 +15,7 @@ permissions:
 
 jobs:
   patch:
+    if: github.event_name == 'push' || github.head_ref == 'fix/device-code-unicode-get'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +28,9 @@ jobs:
           from pathlib import Path
           p = Path('server.js')
           s = p.read_text(encoding='utf-8')
+          if 'function normalizeDeviceCodePart(value, fallback)' in s and 'GET chỉ đọc dữ liệu' in s:
+              print('server.js already patched')
+              raise SystemExit(0)
 
           old_norm = '''function normalizeDeviceCode(value, departmentCode = "XX", groupCode = "K") {
             const dept = String(departmentCode || "XX").trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || "XX";
