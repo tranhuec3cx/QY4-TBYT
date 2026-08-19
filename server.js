@@ -962,32 +962,40 @@ function dateRangeFromPreset(preset, date, fromDate, toDate) {
   return { start: fmt(start), end: fmt(end) };
 }
 
+function normalizeDeviceCodePart(value, fallback) {
+  const cleaned = String(value || fallback || "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9Đ]/g, "");
+  return cleaned || fallback;
+}
+
 function normalizeDeviceCode(value, departmentCode = "XX", groupCode = "K") {
-  const dept = String(departmentCode || "XX").trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || "XX";
-  const group = String(groupCode || "K").trim().toUpperCase().replace(/[^A-Z0-9]/g, "") || "K";
+  const dept = normalizeDeviceCodePart(departmentCode, "XX");
+  const group = normalizeDeviceCodePart(groupCode, "K");
   const raw = String(value || "").trim().toUpperCase();
-  let m = raw.match(/^QY4[-.]?([A-Z0-9]+)[-.]([A-Z0-9]+)[-.](\d{4})$/);
-  if (m) return `${m[1]}.${m[2]}.${m[3]}`;
-  m = raw.match(/^([A-Z0-9]+)[-.]([A-Z0-9]+)[-.](\d{4})$/);
-  if (m) return `${m[1]}.${m[2]}.${m[3]}`;
+
+  let m = raw.match(/^QY4[-.]?([A-Z0-9Đ]+)[-.]([A-Z0-9Đ]+)[-.](\d{4})$/);
+  if (m) return m[1] + "." + m[2] + "." + m[3];
+
+  m = raw.match(/^([A-Z0-9Đ]+)[-.]([A-Z0-9Đ]+)[-.](\d{4})$/);
+  if (m) return m[1] + "." + m[2] + "." + m[3];
+
   m = raw.match(/(\d{4})$/);
-  if (m) return `${dept}.${group}.${m[1]}`;
+  if (m) return dept + "." + group + "." + m[1];
   return "";
 }
 
 function getDeviceCode(id) {
-  const row = db.prepare(`SELECT device_code, department_code, group_code FROM devices WHERE id = ?`).get(id);
+  const row = db.prepare("SELECT device_code, department_code, group_code FROM devices WHERE id = ?").get(id);
   if (!row) return "";
-  const normalized = normalizeDeviceCode(row.device_code, row.department_code, row.group_code);
-  if (normalized) {
-    if (normalized !== row.device_code) db.prepare("UPDATE devices SET device_code=? WHERE id=?").run(normalized, id);
-    return normalized;
-  }
-  const code = generateDeviceCode(row.department_code, row.group_code);
-  db.prepare("UPDATE devices SET device_code=? WHERE id=?").run(code, id);
-  return code;
+  // GET chỉ đọc dữ liệu, không UPDATE mã thiết bị khi render/preview.
+  const current = String(row.device_code || "").trim();
+  if (current) return current;
+  return generateDeviceCode(row.department_code, row.group_code);
 }
-
 
 function enrichDevice(device) {
   return { ...device, device_code: getDeviceCode(device.id) };
@@ -1015,17 +1023,23 @@ function ensureDeviceCodeColumnsAndData() {
   try { db.prepare("CREATE UNIQUE INDEX IF NOT EXISTS idx_devices_device_code ON devices(device_code)").run(); } catch (e) {}
 }
 function generateDeviceCode(departmentCode, groupCode) {
-  const dept = String(departmentCode || 'XX').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'XX';
-  const group = String(groupCode || 'K').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'K';
-  const prefix = `${dept}.${group}.`;
+  const dept = normalizeDeviceCodePart(departmentCode, "XX");
+  const group = normalizeDeviceCodePart(groupCode, "K");
+  const prefix = dept + "." + group + ".";
   const rows = db.prepare("SELECT device_code FROM devices WHERE device_code LIKE ? ORDER BY device_code").all(prefix + "%");
   let max = 0;
   for (const r of rows) {
     const normalized = normalizeDeviceCode(r.device_code, dept, group);
-    const m = String(normalized || '').match(/\.(\d{4})$/);
+    const m = String(normalized || "").match(/\.(\d{4})$/);
     if (m) max = Math.max(max, Number(m[1]));
   }
-  return `${prefix}${String(max + 1).padStart(4, '0')}`;
+  let next = max + 1;
+  let code = prefix + String(next).padStart(4, "0");
+  while (db.prepare("SELECT 1 FROM devices WHERE device_code=? LIMIT 1").get(code)) {
+    next += 1;
+    code = prefix + String(next).padStart(4, "0");
+  }
+  return code;
 }
 
 function normalizeIncidentStatusesInDb() {
