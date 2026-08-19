@@ -2,6 +2,53 @@
   // Serial Number hãng và mã HIS/BHXH là hai trường độc lập trên mọi màn hình.
   autoFillGeneralSerial = function p3NoSerialAutofill() {};
 
+  function p3CodePart(value, fallback) {
+    const cleaned = String(value || fallback || '')
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^A-Z0-9Đ]/g, '');
+    return cleaned || fallback;
+  }
+
+  function p3ExpectedPrefix(departmentCode, groupCode) {
+    return p3CodePart(departmentCode, 'XX') + '.' + p3CodePart(groupCode, 'K') + '.';
+  }
+
+  async function p3DeviceCodeForClassification(departmentCode, groupCode, currentCode, currentId) {
+    const prefix = p3ExpectedPrefix(departmentCode, groupCode);
+    const current = String(currentCode || '').trim();
+    if (current.startsWith(prefix)) return current;
+
+    const devices = await api('/api/devices');
+    const used = new Map();
+    (devices || []).forEach(d => {
+      const code = String(d?.device_code || '').trim();
+      if (code && Number(d.id) !== Number(currentId)) used.set(code, Number(d.id));
+    });
+
+    const suffix = current.match(/(\d{4})$/)?.[1] || '';
+    if (suffix) {
+      const preferred = prefix + suffix;
+      if (!used.has(preferred)) return preferred;
+    }
+
+    let max = 0;
+    for (const code of used.keys()) {
+      if (!code.startsWith(prefix)) continue;
+      const m = code.match(/\.(\d{4})$/);
+      if (m) max = Math.max(max, Number(m[1]));
+    }
+    let next = max + 1;
+    let candidate = prefix + String(next).padStart(4, '0');
+    while (used.has(candidate)) {
+      next += 1;
+      candidate = prefix + String(next).padStart(4, '0');
+    }
+    return candidate;
+  }
+
   saveGeneral = async function p3SaveGeneralStrictSerial() {
     const payload = {
       department_code: q("generalDepartment").value,
@@ -24,6 +71,13 @@
       note: q("generalNote").value.trim()
     };
     try {
+      payload.device_code = await p3DeviceCodeForClassification(
+        payload.department_code,
+        payload.group_code,
+        payload.device_code,
+        DEVICE_ID
+      );
+      q("generalDeviceCode").value = payload.device_code;
       await api(`/api/devices/${DEVICE_ID}`, { method: "PUT", body: JSON.stringify(payload) });
       toggleGeneral(false);
       await loadDevice();
