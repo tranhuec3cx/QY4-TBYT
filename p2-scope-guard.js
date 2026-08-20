@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const multer = require('multer');
 const ExcelJS = require('exceljs');
+const deviceCodes = require('./device-code-service');
 
 const importUpload = multer({
   storage: multer.memoryStorage(),
@@ -55,6 +56,7 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
     if (!conn) {
       conn = new Database(dbPath);
       try { conn.pragma('busy_timeout = 5000'); } catch {}
+      try { deviceCodes.ensureAliasTable(conn); } catch {}
     }
     return conn;
   }
@@ -95,11 +97,76 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
     return '';
   }
 
+  function syncAfterSuccessfulResponse(res, ids) {
+    const originalJson = res.json.bind(res);
+    res.json = (payload) => {
+      if (res.statusCode < 400) {
+        try { deviceCodes.syncMany(db(), ids); } catch (e) { console.error('[DEVICE CODE SYNC]', e.message); }
+      }
+      return originalJson(payload);
+    };
+  }
+
   app.use('/api', (req, res, next) => {
     // Chụp path ngay khi đang ở mount /api. Khi response trả về, Express có thể đã
     // phục hồi req.url về dạng /api/... nên không dùng req.path động trong res.json.
     const scopedPath = req.path;
     const user = getUser(req);
+
+    // ===== Đồng bộ mã thiết bị theo Khoa/Nhóm - áp dụng cho MỌI mã khoa/nhóm =====
+    // Không hard-code A10/A9, B5/B9... Quy tắc duy nhất: KHOA.NHÓM.STT.
+    if (scopedPath === '/devices/sync-codes') {
+      if (!user) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+      if (!isSettingsUser(user)) return res.status(403).json({ error: 'Chỉ Quản trị viên hoặc Khoa Trang bị được đồng bộ mã thiết bị.' });
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
+      try {
+        const ids = Array.isArray(req.body?.ids) ? req.body.ids : null;
+        const changes = deviceCodes.syncMany(db(), ids);
+        return res.json({ ok: true, updated: changes.length, changes });
+      } catch (e) {
+        return res.status(409).json({ error: e.message || 'Không đồng bộ được mã thiết bị.' });
+      }
+    }
+
+    // Thiết bị mới: mã được cấp theo Khoa/Nhóm và không tái sử dụng mã cũ đã gắn QR.
+    if (req.method === 'POST' && scopedPath === '/devices' && req.body && user && isSettingsUser(user)) {
+      try {
+        req.body.device_code = deviceCodes.allocate(db(), {
+          departmentCode: req.body.department_code,
+          groupCode: req.body.group_code,
+          currentCode: req.body.device_code || ''
+        });
+      } catch (e) {
+        return res.status(409).json({ error: e.message || 'Không cấp được mã thiết bị.' });
+      }
+      return next();
+    }
+
+    // Mọi cập nhật thiết bị: nếu Khoa/Nhóm thay đổi, server tự đổi tiền tố mã.
+    // Giữ 4 số cuối nếu còn trống; nếu trùng thì cấp số tiếp theo. Mã cũ được lưu alias QR.
+    const deviceUpdateMatch = scopedPath.match(/^\/devices\/(\d+)$/);
+    if (req.method === 'PUT' && deviceUpdateMatch && req.body) {
+      const id = Number(deviceUpdateMatch[1]);
+      const current = db().prepare('SELECT id,department_code,group_code,device_code FROM devices WHERE id=?').get(id);
+      if (!current) return res.status(404).json({ error: 'Không tìm thấy thiết bị.' });
+      const targetDepartment = String(req.body.department_code || current.department_code || '').trim();
+      const targetGroup = String(req.body.group_code || current.group_code || '').trim();
+      try {
+        const newCode = deviceCodes.allocate(db(), {
+          deviceId: id,
+          departmentCode: targetDepartment,
+          groupCode: targetGroup,
+          currentCode: current.device_code || ''
+        });
+        if (newCode !== String(current.device_code || '').trim()) {
+          deviceCodes.rememberAlias(db(), current.device_code, id);
+        }
+        req.body.device_code = newCode;
+      } catch (e) {
+        return res.status(409).json({ error: e.message || 'Không đồng bộ được mã thiết bị theo Khoa/Nhóm.' });
+      }
+      return next();
+    }
 
     // ===== Nhập Excel thiết bị =====
     // Đọc workbook ở server bằng ExcelJS document reader. Cách này tránh lỗi browser
@@ -222,6 +289,21 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
         && !['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       if (!user) return res.status(401).json({ error: 'Chưa đăng nhập.' });
       if (!isSettingsUser(user)) return res.status(403).json({ error: 'Không có quyền thay đổi danh mục dùng chung.' });
+    }
+
+    // Nếu đổi chính MÃ khoa hoặc MÃ nhóm trong Cài đặt, đồng bộ toàn bộ thiết bị liên quan sau khi cập nhật danh mục thành công.
+    if (req.method === 'PUT') {
+      const depRename = scopedPath.match(/^\/departments\/([^/]+)$/);
+      const groupRename = scopedPath.match(/^\/device-groups\/([^/]+)$/);
+      if (depRename) {
+        const oldCode = decodeURIComponent(depRename[1]);
+        const ids = db().prepare('SELECT id FROM devices WHERE department_code=? ORDER BY id').all(oldCode).map(x => Number(x.id));
+        syncAfterSuccessfulResponse(res, ids);
+      } else if (groupRename) {
+        const oldCode = decodeURIComponent(groupRename[1]);
+        const ids = db().prepare('SELECT id FROM devices WHERE group_code=? ORDER BY id').all(oldCode).map(x => Number(x.id));
+        syncAfterSuccessfulResponse(res, ids);
+      }
     }
 
     // RC1: phiếu sửa chữa đã kết thúc là hồ sơ lịch sử, không cho hủy trực tiếp qua API.
