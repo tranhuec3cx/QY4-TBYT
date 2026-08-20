@@ -8,7 +8,24 @@ function connection(Database, dbPath) {
 
 function deviceByKey(conn, kind, key) {
   if (kind === 'id') return conn.prepare('SELECT id,device_code,name FROM devices WHERE id=? LIMIT 1').get(Number(key)) || null;
-  return conn.prepare('SELECT id,device_code,name FROM devices WHERE device_code=? LIMIT 1').get(String(key)) || null;
+
+  const code = String(key);
+  const direct = conn.prepare('SELECT id,device_code,name FROM devices WHERE device_code=? LIMIT 1').get(code) || null;
+  if (direct) return direct;
+
+  // Khi thiết bị chuyển khoa/đổi nhóm, mã hiện hành thay đổi nhưng QR đã in bằng mã cũ
+  // vẫn phải mở đúng hồ sơ. device_code_aliases lưu lịch sử các mã cũ theo device_id.
+  try {
+    return conn.prepare(`
+      SELECT d.id,d.device_code,d.name
+      FROM device_code_aliases a
+      JOIN devices d ON d.id=a.device_id
+      WHERE a.old_code=?
+      LIMIT 1
+    `).get(code) || null;
+  } catch {
+    return null;
+  }
 }
 
 function tokenFrom(req) {
