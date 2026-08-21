@@ -10,6 +10,10 @@
     .import-guide{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
     .import-step{border:1px solid #d7e3f1;border-radius:12px;padding:12px;background:#f9fbfe}
     .import-step b{display:block;color:#0b5bb5;margin-bottom:4px}
+    .import-mode-row{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:12px;align-items:end}
+    .import-mode-row label{display:grid;gap:6px;font-weight:700}
+    .import-mode-row select{height:42px;border:1px solid #cbd9e8;border-radius:8px;background:#fff;padding:0 10px}
+    #modeHelp{margin:0;padding:10px 12px;border:1px solid #d7e3f1;border-radius:8px;background:#f8fbff;color:#435c77;font-size:13px}
     .import-file-row{display:grid;grid-template-columns:minmax(260px,1fr) auto auto auto;gap:10px;align-items:end}
     .import-file-row label{display:grid;gap:6px;font-weight:600}
     .import-file-row input[type=file]{width:100%;padding:9px;border:1px solid #cbd9e8;border-radius:8px;background:white}
@@ -37,7 +41,7 @@
     .import-note{padding:10px 12px;border-radius:8px;background:#fff8e6;color:#775500;font-size:13px}
     @media(max-width:1000px){
       .import-guide,.import-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
-      .import-file-row{grid-template-columns:1fr 1fr}
+      .import-file-row,.import-mode-row{grid-template-columns:1fr 1fr}
     }
   </style>
 </head>
@@ -57,10 +61,21 @@
 
       <section class="card import-shell">
         <div class="import-guide">
-          <div class="import-step"><b>1. Chọn file</b><span>Ưu tiên file có sheet <strong>IMPORT_READY</strong>.</span></div>
-          <div class="import-step"><b>2. Kiểm tra</b><span>Đối chiếu 4 trường bắt buộc, Serial và danh mục.</span></div>
-          <div class="import-step"><b>3. Xem trước</b><span>Các dòng lỗi hoặc đã tồn tại không được nhập.</span></div>
-          <div class="import-step"><b>4. Nhập chính thức</b><span>Thiết bị được tạo tuần tự để bảo đảm an toàn SQLite.</span></div>
+          <div class="import-step"><b>1. Chọn chế độ & file</b><span>Thêm mới hoặc cập nhật thiết bị hiện có theo Serial.</span></div>
+          <div class="import-step"><b>2. Kiểm tra</b><span>Đối chiếu Serial, trường dữ liệu và danh mục phù hợp với chế độ.</span></div>
+          <div class="import-step"><b>3. Xem trước</b><span>Xem chính xác bản ghi nào sẽ thêm mới hoặc được cập nhật.</span></div>
+          <div class="import-step"><b>4. Thực hiện</b><span>Xác nhận trước khi ghi dữ liệu vào SQLite.</span></div>
+        </div>
+
+        <div class="import-mode-row">
+          <label>
+            <span>Chế độ xử lý</span>
+            <select id="importMode">
+              <option value="insert">Thêm thiết bị mới</option>
+              <option value="update">Cập nhật thiết bị hiện có theo Serial Number</option>
+            </select>
+          </label>
+          <p id="modeHelp">Thêm thiết bị mới; ưu tiên sheet IMPORT_READY. Serial đã có sẽ được bỏ qua.</p>
         </div>
 
         <div class="import-file-row">
@@ -76,7 +91,7 @@
         <div class="import-options">
           <label><input id="autoCreateCatalogs" type="checkbox" checked /> Tự bổ sung Khoa/Phòng và Nhóm thiết bị còn thiếu từ file</label>
         </div>
-        <div class="import-note">
+        <div class="import-note" id="importNote">
           File được kiểm tra theo 4 trường bắt buộc: <b>Khoa/Phòng, Nhóm thiết bị, Tên thiết bị, Serial Number</b>.
           Serial đã có trong hệ thống sẽ tự động bỏ qua, không tạo bản ghi trùng.
         </div>
@@ -84,9 +99,9 @@
 
       <section class="import-stats">
         <div class="import-stat"><span>Tổng dòng</span><b id="statTotal">0</b></div>
-        <div class="import-stat"><span>Sẵn sàng nhập</span><b id="statReady">0</b></div>
-        <div class="import-stat"><span>Đã tồn tại</span><b id="statExisting">0</b></div>
-        <div class="import-stat"><span>Cần sửa</span><b id="statError">0</b></div>
+        <div class="import-stat"><span id="statReadyLabel">Sẵn sàng nhập</span><b id="statReady">0</b></div>
+        <div class="import-stat"><span id="statExistingLabel">Đã tồn tại</span><b id="statExisting">0</b></div>
+        <div class="import-stat"><span id="statErrorLabel">Cần sửa</span><b id="statError">0</b></div>
       </section>
 
       <section class="card import-shell">
@@ -133,5 +148,6 @@
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/import-export.js"></script>
   <script src="/import-excel-server-reader.js?v=raw-v2-20260819"></script>
+  <script src="/import-update-existing.js?v=20260821"></script>
 </body>
 </html>
