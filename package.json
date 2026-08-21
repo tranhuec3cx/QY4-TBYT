@@ -15,7 +15,7 @@
     "test:p2": "node test-p2-security.js",
     "test:p3:excel": "node test-p3-excel.js && node test-import-xlsx-raw.js",
     "test:p3:reports": "node test-p3-reports.js",
-    "test:p4:ui": "node test-p4-ui.js && node test-settings-group-serial.js && node test-device-code-sync-ui.js && node test-device-code-service.js",
+    "test:p4:ui": "node test-p4-ui.js && node test-settings-group-serial.js && node test-device-code-sync-ui.js && node test-device-code-service.js && node test-import-update-existing.js",
     "test:p4:role": "node test-p4-role-ui.js",
     "test:p4:dashboard": "node test-p4-dashboard.js",
     "test:p4:scope": "node test-p4-dept-scope.js",
