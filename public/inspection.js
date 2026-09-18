@@ -34,7 +34,27 @@ function fileCell(r){
   const name = r.original_name || r.stored_name || String(r.file_path).split("/").pop() || "Tệp đính kèm";
   return `<a class="btn btn-secondary btn-sm" href="${esc(r.file_path)}" target="_blank" rel="noopener">Tải file</a><div class="small file-name-line">${esc(name)}</div>`;
 }
-function renderRows(data){ q("countLabel").textContent=`${data.length} bản ghi`; if(!data.length){ q("rows").innerHTML=`<tr><td colspan="13" class="center-empty">Chưa có bản ghi bảo dưỡng phù hợp.</td></tr>`; return; } q("rows").innerHTML=data.map((r,i)=>`<tr><td>${i+1}</td><td>${formatDateTimeVN(r.maintenance_date)}</td><td class="device-code">${esc(r.device_code||"")}</td><td><b>${esc(r.device_name||"")}</b></td><td class="code-only">${esc(r.department_code||r.department_name||"")}</td><td>${esc(r.type||"")}</td><td class="wrap-text">${esc(r.content||"")}</td><td><span class="tag ${resultClass(r.result)}">${esc(r.result||"")}</span></td><td>${esc(r.performer||"")}</td><td>${esc(r.vendor||"")}</td><td>${formatDateVN(r.next_date)}</td><td>${fileCell(r)}</td><td><div class="table-actions compact-actions"><button class="btn btn-secondary" onclick="openDeviceProfile(${Number(r.device_id)})">Xem</button><button class="btn" onclick="editMaint(${Number(r.id)})">Cập nhật</button><button class="btn btn-danger" onclick="deleteMaint(${Number(r.id)})">Hủy</button></div></td></tr>`).join(""); }
+function renderRows(data){
+  q("countLabel").textContent=`${data.length} bản ghi`;
+  if(!data.length){ q("rows").innerHTML=`<tr><td colspan="12" class="center-empty">Chưa có bản ghi bảo dưỡng phù hợp.</td></tr>`; return; }
+  q("rows").innerHTML=data.map((r,i)=>{
+    const d=getDevice(r.device_id)||{};
+    return `<tr>
+      <td>${i+1}</td>
+      <td class="op-time-col">${QY4OperationCells.time(r.maintenance_date)}</td>
+      <td class="op-device-col">${QY4OperationCells.device(r,d)}</td>
+      <td class="op-dept-col">${QY4OperationCells.departmentLocation(r,d)}</td>
+      <td>${esc(r.type||"")}</td>
+      <td class="wrap-text">${esc(r.content||"")}</td>
+      <td><span class="tag ${resultClass(r.result)}">${esc(r.result||"")}</span></td>
+      <td>${esc(r.performer||"")}</td>
+      <td>${esc(r.vendor||"")}</td>
+      <td>${formatDateVN(r.next_date)}</td>
+      <td>${fileCell(r)}</td>
+      <td><div class="table-actions compact-actions"><button class="btn btn-secondary" onclick="openDeviceProfile(${Number(r.device_id)})">Xem</button><button class="btn" onclick="editMaint(${Number(r.id)})">Cập nhật</button><button class="btn btn-danger" onclick="deleteMaint(${Number(r.id)})">Hủy</button></div></td>
+    </tr>`;
+  }).join("");
+}
 function applyFilter(){ const text=norm(q("searchInput").value); const device=q("deviceFilter").value; const type=q("typeFilter").value; const vendor=q("vendorFilter").value; const from=q("fromDate").value; const to=q("toDate").value; const data=ROWS.filter(r=>inDateRange(r.maintenance_date,from,to)&&(device==="ALL"||String(r.device_id)===device)&&(type==="ALL"||r.type===type)&&(vendor==="ALL"||(r.vendor||"")===vendor)&&(!text||norm([r.device_code,r.device_name,r.type,r.content,r.performer,r.vendor,r.result].join(" ")).includes(text))).sort((a,b)=>String(b.maintenance_date||"").localeCompare(String(a.maintenance_date||""))||Number(b.id)-Number(a.id)); FILTERED_MAINTS=data; renderRows(data); }
 function clearFilters(){ q("searchInput").value=""; q("deviceFilter").value="ALL"; q("typeFilter").value="ALL"; q("vendorFilter").value="ALL"; setDefaultDateRange(); applyFilter(); }
 function openDeviceProfile(id){ if(id) window.open(`/device-detail.html?id=${id}`,"_blank"); }
