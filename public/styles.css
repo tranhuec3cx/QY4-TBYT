@@ -2346,7 +2346,7 @@ tbody tr:hover td{background:#eef7ff!important;}
   table-layout:fixed;
 }
 .repair-table-v2{min-width:1450px;}
-.maintenance-table-v2{min-width:1650px;}
+.maintenance-table-v2{min-width:1450px;}
 .inspection-records-table-v2{min-width:1450px;}
 
 .repair-table-v2 th,
@@ -2388,19 +2388,19 @@ tbody tr:hover td{background:#eef7ff!important;}
 .repair-table-v2 td:nth-child(5),
 .repair-table-v2 td:nth-child(10){white-space:normal;overflow-wrap:anywhere;}
 
-/* Bảo dưỡng: ưu tiên Thiết bị và Nội dung */
+/* Bảo dưỡng: vừa khung desktop, ưu tiên Thiết bị và Nội dung */
 .maintenance-table-v2 col.maint-col-stt{width:3%;}
 .maintenance-table-v2 col.maint-col-time{width:7%;}
-.maintenance-table-v2 col.maint-col-device{width:17%;}
-.maintenance-table-v2 col.maint-col-dept{width:9%;}
+.maintenance-table-v2 col.maint-col-device{width:16%;}
+.maintenance-table-v2 col.maint-col-dept{width:8%;}
 .maintenance-table-v2 col.maint-col-type{width:8%;}
-.maintenance-table-v2 col.maint-col-content{width:19%;}
+.maintenance-table-v2 col.maint-col-content{width:18%;}
 .maintenance-table-v2 col.maint-col-result{width:6%;}
 .maintenance-table-v2 col.maint-col-performer{width:8%;}
-.maintenance-table-v2 col.maint-col-vendor{width:6%;}
+.maintenance-table-v2 col.maint-col-vendor{width:7%;}
 .maintenance-table-v2 col.maint-col-next{width:7%;}
-.maintenance-table-v2 col.maint-col-file{width:4%;}
-.maintenance-table-v2 col.maint-col-actions{width:6%;}
+.maintenance-table-v2 col.maint-col-file{width:5%;}
+.maintenance-table-v2 col.maint-col-actions{width:7%;}
 .maintenance-table-v2 td:nth-child(6){white-space:normal;overflow-wrap:anywhere;}
 
 /* Kiểm định: ưu tiên Thiết bị và Đơn vị kiểm định */

@@ -65,7 +65,8 @@ assert.ok(repairHtml.includes('repair-col-issue') && repairHtml.includes('repair
 assert.ok(maintHtml.includes('maintenance-table-v2') && maintHtml.includes('maint-col-content'), 'Bảo dưỡng phải có colgroup ưu tiên Nội dung.');
 assert.ok(inspectionsHtml.includes('inspection-records-table-v2') && inspectionsHtml.includes('insp-col-org'), 'Kiểm định phải có colgroup ưu tiên Đơn vị kiểm định.');
 assert.ok(styles.includes('.repair-table-v2{min-width:1450px;}') && styles.includes('col.repair-col-issue{width:17%'), 'Sửa chữa phải khóa tỷ lệ cột.');
-assert.ok(styles.includes('.maintenance-table-v2{min-width:1650px;}') && styles.includes('col.maint-col-content{width:19%'), 'Bảo dưỡng phải khóa tỷ lệ cột.');
+assert.ok(styles.includes('.maintenance-table-v2{min-width:1450px;}') && styles.includes('col.maint-col-content{width:18%'), 'Bảo dưỡng phải vừa khung desktop và vẫn ưu tiên cột Nội dung.');
+assert.ok(styles.includes('col.maint-col-device{width:16%') && styles.includes('col.maint-col-actions{width:7%'), 'Bảo dưỡng phải cân đối cột Thiết bị và Thao tác sau khi thu gọn.');
 assert.ok(styles.includes('.inspection-records-table-v2{min-width:1450px;}') && styles.includes('col.insp-col-org{width:15%'), 'Kiểm định phải khóa tỷ lệ cột.');
 
 assert.ok(styles.includes('col.repair-col-summary{width:14%'), 'Sửa chữa phải dành đủ chiều rộng cho Tóm tắt xử lý.');
