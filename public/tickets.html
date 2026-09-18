@@ -36,8 +36,8 @@
       <section class="card">
         <div class="table-card-header"><h3 id="countLabel">0 sự cố</h3></div>
         <div class="table-wrap scroll-area">
-          <table class="incident-table-v2">
-            <thead><tr><th>STT</th><th>Thời gian</th><th>Mã thiết bị</th><th>Tên thiết bị</th><th>Vị trí</th><th>Mô tả sự cố</th><th>Người báo</th><th>Trạng thái</th><th>Ảnh/Video</th><th>Thao tác</th></tr></thead>
+          <table class="incident-table-v2 operation-table">
+            <thead><tr><th>STT</th><th class="col-op-time">Thời gian</th><th class="col-op-device">Thiết bị</th><th class="col-op-dept">Khoa / Vị trí</th><th>Mô tả sự cố</th><th>Người báo</th><th>Trạng thái</th><th>Ảnh/Video</th><th>Thao tác</th></tr></thead>
             <tbody id="rows"></tbody>
           </table>
         </div>
@@ -68,7 +68,8 @@
           <dialog id="mediaDialog" class="wide-dialog media-dialog"><div class="dialog-head"><h2>Ảnh/Video sự cố</h2><button class="btn" onclick="q('mediaDialog').close()">Đóng</button></div><div id="mediaDialogBody" class="media-dialog-body"></div></dialog>
     </main>
   </div>
-  <script src="/api.js"></script>\n  <script src="/operation-table-cells.js"></script>
+  <script src="/api.js"></script>
+  <script src="/operation-table-cells.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/tickets.js"></script>
 </body>
