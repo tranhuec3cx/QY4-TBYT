@@ -132,7 +132,7 @@ function renderRows(rows){
       <td class="op-time-col">${QY4OperationCells.time(r.incident_datetime)}</td>
       <td class="op-device-col">${QY4OperationCells.device(r,d)}</td>
       <td class="op-dept-col">${QY4OperationCells.departmentLocation(r,d)}</td>
-      <td class="wrap-text">${esc(r.description || "")}</td>
+      <td class="wrap-text incident-description-cell">${esc(r.description || "")}</td>
       <td>${esc(r.reporter || "")}</td>
       <td><span class="tag ${statusClass(r.status)}">${esc(r.status === "Đã chuyển sửa chữa" ? "Đã chuyển SC" : (r.status || ""))}</span></td>
       <td>${mediaCell(r)}</td>
