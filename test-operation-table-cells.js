@@ -50,3 +50,9 @@ console.log('[OPERATION TABLE CELLS] PASS - 4 tab dùng chung Thời gian, Thi�
 const incidentCss = fs.readFileSync('public/styles.css','utf8');
 assert.ok(incidentCss.includes('.incident-table-v2 .col-op-dept') && incidentCss.includes('width:135px!important'), 'Sự cố phải thu hẹp cột Khoa/Vị trí.');
 assert.ok(incidentCss.includes('.incident-table-v2 th:nth-child(5)') && incidentCss.includes('min-width:320px'), 'Sự cố phải ưu tiên chiều rộng cho Mô tả sự cố.');
+
+
+const incidentHtmlV2 = fs.readFileSync('public/tickets.html','utf8');
+assert.ok(incidentHtmlV2.includes('incident-col-dept') && incidentHtmlV2.includes('incident-col-description'), 'Sự cố phải có colgroup khóa Khoa/Vị trí và Mô tả.');
+assert.ok(incidentCss.includes('table-layout:fixed') && incidentCss.includes('col.incident-col-description{width:24%'), 'Sự cố phải khóa table-layout và ưu tiên Mô tả sự cố.');
+assert.ok(incidentCss.includes('col.incident-col-dept{width:9%'), 'Khoa/Vị trí phải nhỏ hơn Mô tả sự cố.');
