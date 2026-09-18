@@ -2314,3 +2314,25 @@ tbody tr:hover td{background:#eef7ff!important;}
   white-space:normal;
   line-height:1.35;
 }
+
+
+/* ===== Sự cố: khóa tỷ lệ cột ổn định cả khi bảng trống ===== */
+.incident-table-v2{
+  width:100%;
+  min-width:1350px;
+  table-layout:fixed;
+}
+.incident-table-v2 col.incident-col-stt{width:4%;}
+.incident-table-v2 col.incident-col-time{width:9%;}
+.incident-table-v2 col.incident-col-device{width:16%;}
+.incident-table-v2 col.incident-col-dept{width:9%;}
+.incident-table-v2 col.incident-col-description{width:24%;}
+.incident-table-v2 col.incident-col-reporter{width:9%;}
+.incident-table-v2 col.incident-col-status{width:8%;}
+.incident-table-v2 col.incident-col-media{width:7%;}
+.incident-table-v2 col.incident-col-actions{width:14%;}
+.incident-table-v2 .incident-description-head,
+.incident-table-v2 .incident-description-cell{
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
