@@ -64,7 +64,7 @@
           <div class="import-step"><b>1. Chọn chế độ & file</b><span>Thêm mới hoặc cập nhật thiết bị hiện có theo Serial.</span></div>
           <div class="import-step"><b>2. Kiểm tra</b><span>Đối chiếu Serial, trường dữ liệu và danh mục phù hợp với chế độ.</span></div>
           <div class="import-step"><b>3. Xem trước</b><span>Xem chính xác bản ghi nào sẽ thêm mới hoặc được cập nhật.</span></div>
-          <div class="import-step"><b>4. Thực hiện</b><span>Xác nhận trước khi ghi dữ liệu vào SQLite.</span></div>
+          <div class="import-step"><b>4. Thực hiện</b><span>Ghi toàn bộ trong một giao dịch; có lỗi sẽ hoàn tác cả lô.</span></div>
         </div>
 
         <div class="import-mode-row">
@@ -85,6 +85,7 @@
           </label>
           <button class="btn" id="checkBtn" type="button">Kiểm tra file</button>
           <button class="btn btn-primary" id="importBtn" type="button" disabled>Nhập chính thức</button>
+          <button class="btn" id="downloadImportErrorsBtn" type="button" hidden>Tải danh sách lỗi</button>
           <button class="btn" id="resetImportBtn" type="button">Đặt lại</button>
         </div>
 

@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const multer = require('multer');
 const ExcelJS = require('exceljs');
 const deviceCodes = require('./device-code-service');
+const { commitDeviceImport } = require('./device-import-service');
 
 const importUpload = multer({
   storage: multer.memoryStorage(),
@@ -196,6 +197,25 @@ function attach({ app, Database, dbPath, getUser, isTech }) {
           return res.status(400).json({ error: `Không đọc được file Excel: ${e.message || 'file không hợp lệ'}` });
         }
       });
+    }
+
+    if (scopedPath === '/import/devices/commit') {
+      if (!user) return res.status(401).json({ error: 'Chưa đăng nhập.' });
+      if (!isSettingsUser(user)) return res.status(403).json({ error: 'Chỉ Quản trị viên hoặc Khoa Trang bị được nhập Excel thiết bị.' });
+      if (req.method !== 'POST') return res.status(405).json({ error: 'Phương thức không được hỗ trợ.' });
+      try {
+        const result = commitDeviceImport(db(), deviceCodes, req.body || {});
+        if (!result.ok) return res.status(400).json(result);
+        return res.json(result);
+      } catch (e) {
+        return res.status(409).json({
+          ok:false,
+          inserted:0,
+          updated:0,
+          skipped:0,
+          errors:[{ sourceStt:'', serial:'', name:'', error:e.message || 'Không thể ghi lô dữ liệu' }]
+        });
+      }
     }
 
     // ===== Cài đặt / tài khoản =====
