@@ -17,7 +17,8 @@ assert.ok(source.includes("serial: existing.serial || ''"), 'Không được tha
 assert.ok(source.includes("device_code: existing.device_code || ''"), 'Không được thay Mã thiết bị khi bổ sung dữ liệu.');
 assert.ok(source.includes("cost: has('cost') ? updates.cost"), 'Phải hỗ trợ bổ sung Nguyên giá.');
 assert.ok(source.includes("has('quality_level')"), 'Phải hỗ trợ bổ sung Cấp chất lượng.');
-assert.ok(source.includes("method:'PUT'"), 'Thiết bị đã có phải được cập nhật qua PUT, không POST tạo trùng.');
+assert.ok(source.includes("commitImportBatch") && source.includes("mode:'update'"), 'Thiết bị đã có phải được cập nhật bằng API giao dịch theo Serial.');
+assert.ok(!source.includes("await api(`/api/devices/${row.existing.id}`"), 'Không được cập nhật từng dòng gây trạng thái dữ liệu dở dang.');
 assert.ok(source.includes('waitForBaseInitialization'), 'Module cập nhật phải chờ luồng nhập nền khởi tạo xong.');
 assert.ok(source.includes('IMPORT_STATE.user'), 'Phải đợi xác thực người dùng trước khi gắn lại handler.');
 assert.ok(source.includes('setTimeout(installUpdateModeHandlers, 0)'), 'Handler cập nhật phải được gắn sau handler nền để không bị ghi đè.');

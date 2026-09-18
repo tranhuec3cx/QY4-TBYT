@@ -6,7 +6,8 @@ const IMPORT_STATE = {
   existingDevices: [],
   meta: { departments: [], groups: [] },
   analysis: null,
-  importing: false
+  importing: false,
+  lastErrors: []
 };
 
 function escHtml(value) {
@@ -289,7 +290,7 @@ function renderAnalysis() {
     ? `Khi nhập chính thức, hệ thống ${catalogParts.join(' và ')} từ file.`
     : 'Danh mục Khoa/Phòng và Nhóm thiết bị đã khớp với hệ thống.';
 
-  q('importBtn').disabled = IMPORT_STATE.importing || a.ready === 0;
+  q('importBtn').disabled = IMPORT_STATE.importing || a.ready === 0 || a.errors > 0;
   const rows = IMPORT_STATE.rows;
   q('previewRows').innerHTML = rows.map((r, i) => {
     const issue = r.validation?.issues?.join('; ') || (r.validation?.state === 'existing' ? 'Serial đã có trong hệ thống — sẽ bỏ qua' : '');
@@ -306,6 +307,17 @@ function renderAnalysis() {
   }).join('') || '<tr><td colspan="8" class="center-empty">Chưa có dữ liệu để xem trước.</td></tr>';
 }
 
+function currentValidationErrors() {
+  return IMPORT_STATE.rows
+    .filter(row => row.validation?.state === 'error')
+    .map(row => ({
+      sourceStt:row.sourceStt,
+      serial:row.serial,
+      name:row.name,
+      error:(row.validation?.issues || []).join('; ')
+    }));
+}
+
 async function validateCurrentFile() {
   if (!IMPORT_STATE.file) {
     alert('Anh chọn file Excel trước.');
@@ -319,62 +331,20 @@ async function validateCurrentFile() {
     await refreshServerState();
     IMPORT_STATE.analysis = analyzeRows(IMPORT_STATE.rows);
     renderAnalysis();
+    if (IMPORT_STATE.analysis.errors > 0) {
+      setImportErrors(currentValidationErrors());
+      setMessage(`Còn ${IMPORT_STATE.analysis.errors} dòng lỗi. Hãy tải danh sách lỗi và sửa file trước khi nhập.`, 'error');
+      return;
+    }
+    setImportErrors(currentValidationErrors());
     setMessage(`Đã kiểm tra ${IMPORT_STATE.analysis.total} dòng. Có ${IMPORT_STATE.analysis.ready} dòng sẵn sàng nhập.`, 'success');
   } catch (e) {
     IMPORT_STATE.rows = [];
     IMPORT_STATE.analysis = null;
     renderAnalysis();
+    setImportErrors([]);
     setMessage(e?.message || 'Không đọc được file Excel.', 'error');
   }
-}
-
-async function ensureCatalogs(analysis) {
-  for (const d of analysis.missingDepartments || []) {
-    try {
-      await api('/api/departments', { method:'POST', body:JSON.stringify(d) });
-    } catch (e) {
-      const fresh = await api('/api/meta');
-      if (!(fresh.departments || []).some(x => normalizeText(x.code).toUpperCase() === d.code)) throw e;
-    }
-  }
-  for (const g of analysis.missingGroups || []) {
-    try {
-      await api('/api/device-groups', { method:'POST', body:JSON.stringify(g) });
-    } catch (e) {
-      const fresh = await api('/api/meta');
-      if (!(fresh.groups || []).some(x => normalizeText(x.code).toUpperCase() === g.code)) throw e;
-    }
-  }
-}
-
-function allocateDeviceCodes(rows, existingDevices) {
-  const used = new Set(existingDevices.map(x => normalizeText(x.device_code)).filter(Boolean));
-  const maxByPrefix = new Map();
-
-  function existingMax(prefix) {
-    if (maxByPrefix.has(prefix)) return maxByPrefix.get(prefix);
-    let max = 0;
-    used.forEach(code => {
-      if (!code.startsWith(prefix)) return;
-      const suffix = code.slice(prefix.length);
-      if (/^\d+$/.test(suffix)) max = Math.max(max, Number(suffix));
-    });
-    maxByPrefix.set(prefix, max);
-    return max;
-  }
-
-  rows.forEach(r => {
-    const prefix = `${r.departmentCode}.${r.groupCode}.`;
-    let n = existingMax(prefix);
-    let code = '';
-    do {
-      n += 1;
-      code = `${prefix}${String(n).padStart(4, '0')}`;
-    } while (used.has(code));
-    maxByPrefix.set(prefix, n);
-    used.add(code);
-    r.payload.device_code = code;
-  });
 }
 
 function setProgress(done, total) {
@@ -387,6 +357,46 @@ function setMessage(text, type = 'info') {
   const el = q('importMessage');
   el.textContent = text || '';
   el.className = `import-message ${type}`;
+}
+
+function setImportErrors(errors) {
+  IMPORT_STATE.lastErrors = Array.isArray(errors) ? errors : [];
+  const button = q('downloadImportErrorsBtn');
+  if (button) button.hidden = IMPORT_STATE.lastErrors.length === 0;
+}
+
+function downloadImportErrors() {
+  if (!IMPORT_STATE.lastErrors.length) return;
+  const quote = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
+  const lines = [
+    ['STT nguồn','Serial Number','Tên thiết bị','Lỗi'].map(quote).join(','),
+    ...IMPORT_STATE.lastErrors.map(row => [row.sourceStt,row.serial,row.name,row.error].map(quote).join(','))
+  ];
+  const blob = new Blob(['\uFEFF' + lines.join('\r\n')], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `QY4_loi_nhap_thiet_bi_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+async function commitImportBatch(payload) {
+  const response = await fetch('/api/import/devices/commit', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json' },
+    body:JSON.stringify(payload)
+  });
+  const raw = await response.text();
+  let data;
+  try { data = raw ? JSON.parse(raw) : {}; }
+  catch { data = { error:raw || 'Phản hồi máy chủ không hợp lệ' }; }
+  if (!response.ok) {
+    const error = new Error(data.error || data.errors?.[0]?.error || 'Không thể ghi lô dữ liệu');
+    error.errors = data.errors || [];
+    throw error;
+  }
+  return data;
 }
 
 async function importValidatedRows() {
@@ -407,51 +417,44 @@ async function importValidatedRows() {
     IMPORT_STATE.analysis = analyzeRows(IMPORT_STATE.rows);
     renderAnalysis();
 
+    if (IMPORT_STATE.analysis.errors > 0) {
+      setImportErrors(currentValidationErrors());
+      setMessage(`Còn ${IMPORT_STATE.analysis.errors} dòng lỗi. Hãy sửa file trước khi nhập.`, 'error');
+      return;
+    }
+
     let candidates = IMPORT_STATE.rows.filter(r => r.validation?.state === 'ready');
     if (!candidates.length) {
       setMessage('Không còn dòng nào cần nhập. Các Serial có thể đã tồn tại trong hệ thống.', 'info');
       return;
     }
 
-    await ensureCatalogs(IMPORT_STATE.analysis);
-    await refreshServerState();
-    IMPORT_STATE.analysis = analyzeRows(IMPORT_STATE.rows);
-    candidates = IMPORT_STATE.rows.filter(r => r.validation?.state === 'ready');
-    allocateDeviceCodes(candidates, IMPORT_STATE.existingDevices);
-
-    let success = 0;
-    const failures = [];
     setProgress(0, candidates.length);
-
-    for (let i = 0; i < candidates.length; i++) {
-      const row = candidates[i];
-      try {
-        await api('/api/devices', { method:'POST', body:JSON.stringify(row.payload) });
-        success++;
-      } catch (e) {
-        failures.push({ stt: row.sourceStt, name: row.name, error: e?.message || 'Lỗi không xác định' });
-      }
-      setProgress(i + 1, candidates.length);
-      if ((i + 1) % 10 === 0 || i + 1 === candidates.length) {
-        setMessage(`Đang nhập: ${i + 1}/${candidates.length} — thành công ${success}, lỗi ${failures.length}.`, 'info');
-      }
-    }
+    setMessage(`Đang ghi ${candidates.length} thiết bị trong một giao dịch an toàn...`, 'info');
+    const result = await commitImportBatch({
+      mode:'insert',
+      autoCreateCatalogs:q('autoCreateCatalogs').checked,
+      rows:candidates.map(row => ({
+        sourceStt:row.sourceStt,
+        departmentName:row.departmentName,
+        groupName:row.groupName,
+        payload:row.payload
+      }))
+    });
+    setProgress(candidates.length, candidates.length);
+    setImportErrors(result.errors || []);
 
     await refreshServerState();
     IMPORT_STATE.analysis = analyzeRows(IMPORT_STATE.rows);
     renderAnalysis();
 
-    if (failures.length) {
-      const brief = failures.slice(0, 5).map(x => `STT ${x.stt}: ${x.name}`).join('; ');
-      setMessage(`Đã nhập ${success} thiết bị; ${failures.length} dòng lỗi. ${brief}${failures.length > 5 ? '…' : ''}`, 'error');
-    } else {
-      setMessage(`Hoàn tất: đã nhập ${success} thiết bị. Những Serial đã tồn tại được tự động bỏ qua.`, 'success');
-    }
+    setMessage(`Hoàn tất: đã nhập ${result.inserted || 0} thiết bị; bỏ qua ${result.skipped || 0} Serial đã tồn tại.`, 'success');
   } catch (e) {
+    setImportErrors(e?.errors || []);
     setMessage(e?.message || 'Không thể hoàn tất nhập dữ liệu.', 'error');
   } finally {
     IMPORT_STATE.importing = false;
-    q('importBtn').disabled = !(IMPORT_STATE.analysis?.ready > 0);
+    q('importBtn').disabled = !(IMPORT_STATE.analysis?.ready > 0) || Number(IMPORT_STATE.analysis?.errors || 0) > 0;
   }
 }
 
@@ -460,6 +463,7 @@ function resetImport() {
   IMPORT_STATE.sheetName = '';
   IMPORT_STATE.rows = [];
   IMPORT_STATE.analysis = null;
+  setImportErrors([]);
   q('excelFile').value = '';
   setProgress(0, 0);
   setMessage('', 'info');
@@ -504,6 +508,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   q('checkBtn').onclick = validateCurrentFile;
   q('importBtn').onclick = importValidatedRows;
   q('resetImportBtn').onclick = resetImport;
+  q('downloadImportErrorsBtn').onclick = downloadImportErrors;
   q('exportCurrentBtn').onclick = exportCurrentCsv;
   q('autoCreateCatalogs').addEventListener('change', () => {
     if (!IMPORT_STATE.rows.length) return;

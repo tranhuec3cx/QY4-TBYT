@@ -238,7 +238,7 @@
       : 'Chưa chọn file.';
     q('catalogInfo').textContent =
       'Đối chiếu bằng Serial Number. Khoa/Nhóm/Mã thiết bị/Serial và lịch sử máy không bị thay đổi.';
-    q('importBtn').disabled = IMPORT_STATE.importing || a.ready === 0;
+    q('importBtn').disabled = IMPORT_STATE.importing || a.ready === 0 || a.errors > 0 || a.notFound > 0;
     q('importBtn').textContent = 'Cập nhật chính thức';
 
     q('previewRows').innerHTML = IMPORT_STATE.rows.map((row, i) => {
@@ -274,11 +274,26 @@
       await refreshServerState();
       IMPORT_STATE.analysis = analyzeUpdateRows(IMPORT_STATE.rows);
       renderUpdateAnalysis();
+      setImportErrors(IMPORT_STATE.rows
+        .filter(row => ['error','notfound'].includes(row.validation?.state))
+        .map(row => ({
+          sourceStt:row.sourceStt,
+          serial:row.serial,
+          name:row.nameRef,
+          error:(row.validation?.issues || []).join('; ')
+        })));
 
-      setMessage(
-        `Đã kiểm tra ${IMPORT_STATE.analysis.total} dòng. Có ${IMPORT_STATE.analysis.ready} thiết bị sẵn sàng cập nhật.`,
-        'success'
-      );
+      if (IMPORT_STATE.analysis.errors > 0 || IMPORT_STATE.analysis.notFound > 0) {
+        setMessage(
+          `Còn ${IMPORT_STATE.analysis.errors + IMPORT_STATE.analysis.notFound} dòng cần sửa hoặc chưa tìm thấy Serial.`,
+          'error'
+        );
+      } else {
+        setMessage(
+          `Đã kiểm tra ${IMPORT_STATE.analysis.total} dòng. Có ${IMPORT_STATE.analysis.ready} thiết bị sẵn sàng cập nhật.`,
+          'success'
+        );
+      }
     } catch (e) {
       IMPORT_STATE.rows = [];
       IMPORT_STATE.analysis = null;
@@ -329,6 +344,19 @@
     IMPORT_STATE.analysis = analyzeUpdateRows(IMPORT_STATE.rows);
     renderUpdateAnalysis();
 
+    if (IMPORT_STATE.analysis.errors > 0 || IMPORT_STATE.analysis.notFound > 0) {
+      setImportErrors(IMPORT_STATE.rows
+        .filter(row => ['error','notfound'].includes(row.validation?.state))
+        .map(row => ({
+          sourceStt:row.sourceStt,
+          serial:row.serial,
+          name:row.nameRef,
+          error:(row.validation?.issues || []).join('; ')
+        })));
+      setMessage('File còn dòng lỗi hoặc Serial chưa có trong hệ thống. Hãy sửa file trước khi cập nhật.', 'error');
+      return;
+    }
+
     const candidates = IMPORT_STATE.rows.filter(
       row => row.validation?.state === 'update'
     );
@@ -355,55 +383,32 @@
     q('importBtn').disabled = true;
     setProgress(0, candidates.length);
 
-    let success = 0;
-    const failures = [];
-
     try {
-      for (let i = 0; i < candidates.length; i++) {
-        const row = candidates[i];
-        try {
-          await api(`/api/devices/${row.existing.id}`, {
-            method:'PUT',
-            body:JSON.stringify(mergedPayload(row.existing, row.updates))
-          });
-          success++;
-        } catch (e) {
-          failures.push({
-            serial:row.serial,
-            error:e?.message || 'Lỗi không xác định'
-          });
-        }
-
-        setProgress(i + 1, candidates.length);
-
-        if ((i + 1) % 10 === 0 || i + 1 === candidates.length) {
-          setMessage(
-            `Đang cập nhật: ${i + 1}/${candidates.length} — thành công ${success}, lỗi ${failures.length}.`,
-            'info'
-          );
-        }
-      }
+      setMessage(`Đang cập nhật ${candidates.length} thiết bị trong một giao dịch an toàn...`, 'info');
+      const result = await commitImportBatch({
+        mode:'update',
+        rows:candidates.map(row => ({
+          sourceStt:row.sourceStt,
+          serial:row.serial,
+          updates:row.updates
+        }))
+      });
+      setProgress(candidates.length, candidates.length);
+      setImportErrors(result.errors || []);
 
       await refreshServerState();
       IMPORT_STATE.analysis = analyzeUpdateRows(IMPORT_STATE.rows);
       renderUpdateAnalysis();
 
-      if (failures.length) {
-        setMessage(
-          `Đã cập nhật ${success} thiết bị; ${failures.length} dòng lỗi. Serial: `
-          + failures.slice(0, 5).map(x => x.serial).join(', ')
-          + (failures.length > 5 ? '…' : ''),
-          'error'
-        );
-      } else {
-        setMessage(
-          `Hoàn tất: đã cập nhật ${success} thiết bị theo Serial Number.`,
-          'success'
-        );
-      }
+      setMessage(`Hoàn tất: đã cập nhật ${result.updated || 0} thiết bị theo Serial Number.`, 'success');
+    } catch (e) {
+      setImportErrors(e?.errors || []);
+      setMessage(e?.message || 'Không thể hoàn tất cập nhật dữ liệu.', 'error');
     } finally {
       IMPORT_STATE.importing = false;
-      q('importBtn').disabled = !(IMPORT_STATE.analysis?.ready > 0);
+      q('importBtn').disabled = !(IMPORT_STATE.analysis?.ready > 0)
+        || Number(IMPORT_STATE.analysis?.errors || 0) > 0
+        || Number(IMPORT_STATE.analysis?.notFound || 0) > 0;
     }
   }
 
@@ -446,6 +451,7 @@
       IMPORT_STATE.sheetName = '';
       IMPORT_STATE.rows = [];
       IMPORT_STATE.analysis = null;
+      setImportErrors([]);
       input.value = '';
       setProgress(0, 0);
       setMessage('', 'info');

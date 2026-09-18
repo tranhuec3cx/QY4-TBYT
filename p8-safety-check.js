@@ -50,6 +50,8 @@ const inspectionJs = fs.readFileSync('public/inspection.js', 'utf8');
 const inspectionsHtml = fs.readFileSync('public/inspections.html', 'utf8');
 const inspectionsJs = fs.readFileSync('public/inspections.js', 'utf8');
 const pickerFix = fs.readFileSync('public/rc1-device-picker-fix.js', 'utf8');
+const importService = fs.readFileSync('device-import-service.js', 'utf8');
+const importClient = fs.readFileSync('public/import-export.js', 'utf8');
 const ticketsJs = fs.readFileSync('public/tickets.js', 'utf8');
 const devicesJs = fs.readFileSync('public/devices.js', 'utf8');
 const reportsHtml = fs.readFileSync('public/reports.html', 'utf8');
@@ -69,6 +71,9 @@ assert.ok(inspectionsHtml.includes('/rc1-device-picker-fix.js'), 'Kiểm định
 assert.ok(pickerFix.includes('commitDeviceSelection'), 'Thiếu logic chốt thiết bị từ datalist/Tab/Enter/blur.');
 assert.ok(pickerFix.includes('findExactDevice') && pickerFix.includes('syncSelection(false)'), 'Ô chọn thiết bị phải giữ từ khóa đang gõ và chỉ chốt kết quả khớp đầy đủ.');
 assert.ok(!pickerFix.includes('genericFind'), 'Không được tự động lấy kết quả đầu tiên khi người dùng mới gõ một phần tên thiết bị.');
+assert.ok(scopeGuard.includes("scopedPath === '/import/devices/commit'"), 'Thiếu API ghi lô dữ liệu thiết bị đã kiểm tra.');
+assert.ok(importService.includes('db.transaction') && importService.includes('commitDeviceImport'), 'Nhập Excel phải ghi bằng transaction ở server.');
+assert.ok(importClient.includes("commitImportBatch") && !importClient.includes("await api('/api/devices', { method:'POST'"), 'Client không được nhập từng thiết bị rời rạc.');
 
 // RC1 - đồng bộ topbar Bảo dưỡng/Kiểm định với các màn hình nghiệp vụ khác.
 assert.ok(inspectionHtml.includes('class="page-actions"') && inspectionHtml.includes('id="addMaintTopBtn"'), 'Bảo dưỡng phải đặt nút Thêm bảo dưỡng trong page-actions ở góc trên phải.');
