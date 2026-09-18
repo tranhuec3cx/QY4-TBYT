@@ -1678,19 +1678,25 @@ app.put("/api/maintenances/:id", uploadDocument.single("file"), (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy bản ghi bảo dưỡng." });
     }
     const file = req.file || null;
-    if (file && old.file_path) safeUnlink(path.join(__dirname, old.file_path.replace(/^\//, "")));
-    db.prepare(`
-      UPDATE maintenances SET
-        device_id=@device_id, maintenance_date=@maintenance_date, type=@type, content=@content, result=@result,
-        performer=@performer, user_confirm=@user_confirm, vendor=@vendor, next_date=@next_date, note=@note,
-        original_name=@original_name, stored_name=@stored_name, file_path=@file_path, file_mime=@file_mime, file_size=@file_size
-      WHERE id=@id
-    `).run({
+    const deviceId = Number(p.device_id || 0);
+    if (!deviceId || !p.maintenance_date || !String(p.content || "").trim()) {
+      if (file) safeUnlink(file.path);
+      return res.status(400).json({ error: "Thiếu thiết bị, thời gian hoặc nội dung bảo dưỡng." });
+    }
+    if (deviceId !== Number(old.device_id)) {
+      if (file) safeUnlink(file.path);
+      return res.status(409).json({ error: "Không được đổi thiết bị của phiếu bảo dưỡng đã tạo. Hãy hủy bản ghi nhập nhầm và tạo phiếu mới để bảo toàn lịch sử." });
+    }
+    if (!db.prepare("SELECT id FROM devices WHERE id=?").get(deviceId)) {
+      if (file) safeUnlink(file.path);
+      return res.status(400).json({ error: "Thiết bị không tồn tại." });
+    }
+    const payload = {
       id,
-      device_id: Number(p.device_id),
+      device_id: deviceId,
       maintenance_date: normalizeDateTime(p.maintenance_date || ""),
       type: p.type || "",
-      content: p.content || "",
+      content: String(p.content || "").trim(),
       result: p.result || "",
       performer: p.performer || "",
       user_confirm: p.user_confirm || "",
@@ -1702,28 +1708,41 @@ app.put("/api/maintenances/:id", uploadDocument.single("file"), (req, res) => {
       file_path: file ? `/uploads/documents/${file.filename}` : old.file_path,
       file_mime: file ? file.mimetype : old.file_mime,
       file_size: file ? file.size : (old.file_size || 0)
-    });
-    if (file) {
+    };
+    const tx = db.transaction(() => {
       db.prepare(`
-        INSERT INTO documents (device_id,name,type,doc_date,updated_by,note,original_name,stored_name,file_path,file_mime,file_size)
-        VALUES (@device_id,@name,@type,@doc_date,@updated_by,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
-      `).run({
-        device_id: Number(p.device_id),
-        name: `Tài liệu bảo dưỡng - ${p.maintenance_date || nowSql().slice(0,10)}`,
-        type: "Bảo dưỡng",
-        doc_date: p.maintenance_date || nowSql().slice(0,10),
-        updated_by: p.performer || "",
-        note: p.note || "Tệp đính kèm từ phiếu bảo dưỡng",
-        original_name: file.originalname,
-        stored_name: file.filename,
-        file_path: `/uploads/documents/${file.filename}`,
-        file_mime: file.mimetype,
-        file_size: file.size
-      });
-    }
-    writeHistory("maintenance", id, p.performer, "Cập nhật", old.result || "", p.result || "", p.content || p.note || "");
+        UPDATE maintenances SET
+          device_id=@device_id, maintenance_date=@maintenance_date, type=@type, content=@content, result=@result,
+          performer=@performer, user_confirm=@user_confirm, vendor=@vendor, next_date=@next_date, note=@note,
+          original_name=@original_name, stored_name=@stored_name, file_path=@file_path, file_mime=@file_mime, file_size=@file_size
+        WHERE id=@id
+      `).run(payload);
+      if (file) {
+        db.prepare(`
+          INSERT INTO documents (device_id,name,type,doc_date,updated_by,note,original_name,stored_name,file_path,file_mime,file_size)
+          VALUES (@device_id,@name,@type,@doc_date,@updated_by,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
+        `).run({
+          device_id: deviceId,
+          name: `Tài liệu bảo dưỡng - ${p.maintenance_date || nowSql().slice(0,10)}`,
+          type: "Bảo dưỡng",
+          doc_date: p.maintenance_date || nowSql().slice(0,10),
+          updated_by: p.performer || "",
+          note: p.note || "Tệp đính kèm từ phiếu bảo dưỡng",
+          original_name: file.originalname,
+          stored_name: file.filename,
+          file_path: `/uploads/documents/${file.filename}`,
+          file_mime: file.mimetype,
+          file_size: file.size
+        });
+      }
+      writeHistory("maintenance", id, p.performer, "Cập nhật", old.result || "", p.result || "", payload.content || p.note || "");
+    });
+    tx();
+    // Chỉ xóa tệp cũ sau khi toàn bộ cập nhật DB đã thành công.
+    if (file && old.file_path) safeUnlink(path.join(__dirname, old.file_path.replace(/^\//, "")));
     res.json({ ok: true, file_path: file ? `/uploads/documents/${file.filename}` : old.file_path });
   } catch (e) {
+    if (req.file) safeUnlink(req.file.path);
     console.error("PUT /api/maintenances/:id error:", e);
     res.status(500).json({ error: e.message });
   }
@@ -1902,16 +1921,21 @@ app.get("/api/maintenances", (req, res) => {
 app.post("/api/maintenances", uploadDocument.single("file"), (req, res) => {
   try {
     const p = req.body || {};
-    if (!p.device_id) return res.status(400).json({ error: "device_id is required" });
     const file = req.file || null;
-    const info = db.prepare(`
-      INSERT INTO maintenances (device_id,maintenance_date,type,content,result,performer,user_confirm,vendor,next_date,note,original_name,stored_name,file_path,file_mime,file_size)
-      VALUES (@device_id,@maintenance_date,@type,@content,@result,@performer,@user_confirm,@vendor,@next_date,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
-    `).run({
-      device_id: Number(p.device_id),
+    const deviceId = Number(p.device_id || 0);
+    if (!deviceId || !p.maintenance_date || !String(p.content || "").trim()) {
+      if (file) safeUnlink(file.path);
+      return res.status(400).json({ error: "Thiếu thiết bị, thời gian hoặc nội dung bảo dưỡng." });
+    }
+    if (!db.prepare("SELECT id FROM devices WHERE id=?").get(deviceId)) {
+      if (file) safeUnlink(file.path);
+      return res.status(400).json({ error: "Thiết bị không tồn tại." });
+    }
+    const payload = {
+      device_id: deviceId,
       maintenance_date: normalizeDateTime(p.maintenance_date || ""),
       type: p.type || "",
-      content: p.content || "",
+      content: String(p.content || "").trim(),
       result: p.result || "",
       performer: p.performer || "",
       user_confirm: p.user_confirm || "",
@@ -1923,28 +1947,37 @@ app.post("/api/maintenances", uploadDocument.single("file"), (req, res) => {
       file_path: file ? `/uploads/documents/${file.filename}` : null,
       file_mime: file ? file.mimetype : null,
       file_size: file ? file.size : 0
+    };
+    const tx = db.transaction(() => {
+      const info = db.prepare(`
+        INSERT INTO maintenances (device_id,maintenance_date,type,content,result,performer,user_confirm,vendor,next_date,note,original_name,stored_name,file_path,file_mime,file_size)
+        VALUES (@device_id,@maintenance_date,@type,@content,@result,@performer,@user_confirm,@vendor,@next_date,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
+      `).run(payload);
+      if (file) {
+        db.prepare(`
+          INSERT INTO documents (device_id,name,type,doc_date,updated_by,note,original_name,stored_name,file_path,file_mime,file_size)
+          VALUES (@device_id,@name,@type,@doc_date,@updated_by,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
+        `).run({
+          device_id: deviceId,
+          name: `Tài liệu bảo dưỡng - ${p.maintenance_date || nowSql().slice(0,10)}`,
+          type: "Bảo dưỡng",
+          doc_date: p.maintenance_date || nowSql().slice(0,10),
+          updated_by: p.performer || "",
+          note: p.note || "Tệp đính kèm từ phiếu bảo dưỡng",
+          original_name: file.originalname,
+          stored_name: file.filename,
+          file_path: `/uploads/documents/${file.filename}`,
+          file_mime: file.mimetype,
+          file_size: file.size
+        });
+      }
+      writeHistory("maintenance", info.lastInsertRowid, p.performer, "Tạo mới", "", p.result || "", payload.content || p.note || "");
+      return info.lastInsertRowid;
     });
-    if (file) {
-      db.prepare(`
-        INSERT INTO documents (device_id,name,type,doc_date,updated_by,note,original_name,stored_name,file_path,file_mime,file_size)
-        VALUES (@device_id,@name,@type,@doc_date,@updated_by,@note,@original_name,@stored_name,@file_path,@file_mime,@file_size)
-      `).run({
-        device_id: Number(p.device_id),
-        name: `Tài liệu bảo dưỡng - ${p.maintenance_date || nowSql().slice(0,10)}`,
-        type: "Bảo dưỡng",
-        doc_date: p.maintenance_date || nowSql().slice(0,10),
-        updated_by: p.performer || "",
-        note: p.note || "Tệp đính kèm từ phiếu bảo dưỡng",
-        original_name: file.originalname,
-        stored_name: file.filename,
-        file_path: `/uploads/documents/${file.filename}`,
-        file_mime: file.mimetype,
-        file_size: file.size
-      });
-    }
-    writeHistory("maintenance", info.lastInsertRowid, p.performer, "Tạo mới", "", p.result || "", p.content || p.note || "");
-    res.json({ id: info.lastInsertRowid, file_path: file ? `/uploads/documents/${file.filename}` : null });
+    const maintenanceId = tx();
+    res.json({ id: maintenanceId, file_path: file ? `/uploads/documents/${file.filename}` : null });
   } catch (e) {
+    if (req.file) safeUnlink(req.file.path);
     console.error("POST /api/maintenances error:", e);
     res.status(500).json({ error: e.message });
   }
@@ -2575,15 +2608,49 @@ app.get("/api/inspections", (req, res) => {
 });
 
 app.post("/api/inspections", (req, res) => {
-  const p = req.body;
-  const info = db.prepare(`INSERT INTO inspections (device_id,inspection_date,type,organization,certificate_no,result,next_date,file_note,note) VALUES (@device_id,@inspection_date,@type,@organization,@certificate_no,@result,@next_date,@file_note,@note)`).run(p);
-  res.json({ id: info.lastInsertRowid });
+  try {
+    const p = req.body || {};
+    const deviceId = Number(p.device_id || 0);
+    const missing = requireFields(p, ["inspection_date", "type", "result"]);
+    if (!deviceId || missing.length) return res.status(400).json({ error: "Thiếu thiết bị, thời gian, loại thực hiện hoặc kết quả kiểm định." });
+    if (!db.prepare("SELECT id FROM devices WHERE id=?").get(deviceId)) return res.status(400).json({ error: "Thiết bị không tồn tại." });
+    const payload = { ...p, device_id: deviceId, inspection_date: normalizeDateTime(p.inspection_date) };
+    const tx = db.transaction(() => {
+      const info = db.prepare(`INSERT INTO inspections (device_id,inspection_date,type,organization,certificate_no,result,next_date,file_note,note) VALUES (@device_id,@inspection_date,@type,@organization,@certificate_no,@result,@next_date,@file_note,@note)`).run(payload);
+      writeHistory("inspection", info.lastInsertRowid, p.organization || "Khoa Trang bị", "Tạo mới", "", p.result || "", p.note || p.certificate_no || "");
+      return info.lastInsertRowid;
+    });
+    res.json({ id: tx() });
+  } catch (e) {
+    console.error("POST /api/inspections error:", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.put("/api/inspections/:id", (req, res) => {
-  const p = req.body;
-  db.prepare(`UPDATE inspections SET device_id=@device_id, inspection_date=@inspection_date, type=@type, organization=@organization, certificate_no=@certificate_no, result=@result, next_date=@next_date, file_note=@file_note, note=@note WHERE id=@id`).run({ ...p, id: Number(req.params.id) });
-  res.json({ ok: true });
+  try {
+    const p = req.body || {};
+    const id = Number(req.params.id);
+    const old = db.prepare("SELECT * FROM inspections WHERE id=?").get(id);
+    if (!old) return res.status(404).json({ error: "Không tìm thấy hồ sơ kiểm định." });
+    const deviceId = Number(p.device_id || 0);
+    const missing = requireFields(p, ["inspection_date", "type", "result"]);
+    if (!deviceId || missing.length) return res.status(400).json({ error: "Thiếu thiết bị, thời gian, loại thực hiện hoặc kết quả kiểm định." });
+    if (deviceId !== Number(old.device_id)) {
+      return res.status(409).json({ error: "Không được đổi thiết bị của hồ sơ kiểm định/hiệu chuẩn đã tạo. Hãy hủy hồ sơ nhập nhầm và tạo hồ sơ mới để bảo toàn lịch sử." });
+    }
+    if (!db.prepare("SELECT id FROM devices WHERE id=?").get(deviceId)) return res.status(400).json({ error: "Thiết bị không tồn tại." });
+    const payload = { ...p, id, device_id: deviceId, inspection_date: normalizeDateTime(p.inspection_date) };
+    const tx = db.transaction(() => {
+      db.prepare(`UPDATE inspections SET device_id=@device_id, inspection_date=@inspection_date, type=@type, organization=@organization, certificate_no=@certificate_no, result=@result, next_date=@next_date, file_note=@file_note, note=@note WHERE id=@id`).run(payload);
+      writeHistory("inspection", id, p.organization || "Khoa Trang bị", "Cập nhật", old.result || "", p.result || "", p.note || p.certificate_no || "");
+    });
+    tx();
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("PUT /api/inspections/:id error:", e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.delete("/api/inspections/:id", (req, res) => {
@@ -3237,4 +3304,3 @@ app.listen(PORT, () => {
   else console.log("QR public URL: chưa cấu hình. Đặt QR_PUBLIC_BASE_URL=https://ten-mien-cong-khai để điện thoại ngoài mạng mở được QR.");
   } catch (e) {}
 });
-

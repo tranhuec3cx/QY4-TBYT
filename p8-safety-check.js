@@ -74,6 +74,10 @@ assert.ok(!pickerFix.includes('genericFind'), 'Không được tự động lấ
 assert.ok(scopeGuard.includes("scopedPath === '/import/devices/commit'"), 'Thiếu API ghi lô dữ liệu thiết bị đã kiểm tra.');
 assert.ok(importService.includes('db.transaction') && importService.includes('commitDeviceImport'), 'Nhập Excel phải ghi bằng transaction ở server.');
 assert.ok(importClient.includes("commitImportBatch") && !importClient.includes("await api('/api/devices', { method:'POST'"), 'Client không được nhập từng thiết bị rời rạc.');
+assert.ok(server.includes('Không được đổi thiết bị của phiếu bảo dưỡng đã tạo.'), 'Phiếu bảo dưỡng đã tạo phải giữ nguyên thiết bị gốc.');
+assert.ok(server.includes('Không được đổi thiết bị của hồ sơ kiểm định/hiệu chuẩn đã tạo.'), 'Hồ sơ kiểm định đã tạo phải giữ nguyên thiết bị gốc.');
+assert.ok(server.includes('if (file && old.file_path) safeUnlink') && server.indexOf('tx();\n    // Chỉ xóa tệp cũ') < server.indexOf('if (file && old.file_path) safeUnlink'), 'Chỉ xóa file bảo dưỡng cũ sau khi transaction cập nhật thành công.');
+assert.ok(inspectionsJs.includes("q('deviceSearch').disabled=true") && inspectionsJs.includes('${esc(deviceSearchLabel(d))}'), 'Giao diện kiểm định phải khóa thiết bị khi sửa và escape danh sách gợi ý.');
 
 // RC1 - đồng bộ topbar Bảo dưỡng/Kiểm định với các màn hình nghiệp vụ khác.
 assert.ok(inspectionHtml.includes('class="page-actions"') && inspectionHtml.includes('id="addMaintTopBtn"'), 'Bảo dưỡng phải đặt nút Thêm bảo dưỡng trong page-actions ở góc trên phải.');
