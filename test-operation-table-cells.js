@@ -45,3 +45,8 @@ assert.ok(!ticketsHtml.includes('<th>Mã thiết bị</th><th>Tên thiết bị<
 assert.ok(styles.includes('.op-time-cell') && styles.includes('.op-device-cell') && styles.includes('.op-dept-cell'), 'CSS phải có đủ 3 nhóm ô chuẩn.');
 
 console.log('[OPERATION TABLE CELLS] PASS - 4 tab dùng chung Thời gian, Thiết bị, Khoa/Vị trí.');
+
+
+const incidentCss = fs.readFileSync('public/styles.css','utf8');
+assert.ok(incidentCss.includes('.incident-table-v2 .col-op-dept') && incidentCss.includes('width:135px!important'), 'Sự cố phải thu hẹp cột Khoa/Vị trí.');
+assert.ok(incidentCss.includes('.incident-table-v2 th:nth-child(5)') && incidentCss.includes('min-width:320px'), 'Sự cố phải ưu tiên chiều rộng cho Mô tả sự cố.');
