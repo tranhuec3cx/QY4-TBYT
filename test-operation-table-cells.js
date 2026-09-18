@@ -64,6 +64,8 @@ const inspectionsHtml = fs.readFileSync('public/inspections.html','utf8');
 assert.ok(repairHtml.includes('repair-col-issue') && repairHtml.includes('repair-col-summary'), 'Sửa chữa phải có colgroup ưu tiên Nguyên nhân và Tóm tắt xử lý.');
 assert.ok(maintHtml.includes('maintenance-table-v2') && maintHtml.includes('maint-col-content'), 'Bảo dưỡng phải có colgroup ưu tiên Nội dung.');
 assert.ok(inspectionsHtml.includes('inspection-records-table-v2') && inspectionsHtml.includes('insp-col-org'), 'Kiểm định phải có colgroup ưu tiên Đơn vị kiểm định.');
-assert.ok(styles.includes('.repair-table-v2{min-width:1800px;}') && styles.includes('col.repair-col-issue{width:15%'), 'Sửa chữa phải khóa tỷ lệ cột.');
+assert.ok(styles.includes('.repair-table-v2{min-width:1450px;}') && styles.includes('col.repair-col-issue{width:17%'), 'Sửa chữa phải khóa tỷ lệ cột.');
 assert.ok(styles.includes('.maintenance-table-v2{min-width:1650px;}') && styles.includes('col.maint-col-content{width:19%'), 'Bảo dưỡng phải khóa tỷ lệ cột.');
 assert.ok(styles.includes('.inspection-records-table-v2{min-width:1450px;}') && styles.includes('col.insp-col-org{width:15%'), 'Kiểm định phải khóa tỷ lệ cột.');
+
+assert.ok(styles.includes('col.repair-col-summary{width:14%'), 'Sửa chữa phải dành đủ chiều rộng cho Tóm tắt xử lý.');
