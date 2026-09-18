@@ -104,7 +104,7 @@ function renderRows(rows) {
     return;
   }
   q("rows").innerHTML = rows.map((r, i) => {
-    const deptCode = r.department_code || r.department_name || "";
+    const d = getDevice(r.device_id) || {};
     const summary = (r.work || r.result || "").slice(0, 55);
     const noteIcon = r.note ? "📝" : "";
     const fileIcon = Number(r.file_count || 0) > 0 ? `📎${Number(r.file_count || 0)}` : "";
@@ -112,9 +112,9 @@ function renderRows(rows) {
     return `
     <tr id="repair-row-${Number(r.id)}">
       <td>${i + 1}</td>
-      <td class="time-cell">${formatDateTimeVN(r.received_at || r.repair_date)}</td>
-      <td><b>${esc(r.device_name || "")}</b><div class="small device-code">${esc(r.device_code || "")}${r.serial ? " · SN: " + esc(r.serial) : ""}${r.model ? " · " + esc(r.model) : ""}</div></td>
-      <td class="code-only">${esc(deptCode)}</td>
+      <td class="op-time-col">${QY4OperationCells.time(r.received_at || r.repair_date)}</td>
+      <td class="op-device-col">${QY4OperationCells.device(r,d)}</td>
+      <td class="op-dept-col">${QY4OperationCells.departmentLocation(r,d)}</td>
       <td class="wrap-text">${esc(r.issue || "")}</td>
       <td>${esc(r.method || "")}</td>
       <td>${esc(r.person || "")}</td>
