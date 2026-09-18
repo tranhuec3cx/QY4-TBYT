@@ -2294,3 +2294,23 @@ tbody tr:hover td{background:#eef7ff!important;}
   .operation-table .col-op-device,.operation-table .op-device-col{min-width:240px;}
   .operation-table .col-op-dept,.operation-table .op-dept-col{min-width:170px;}
 }
+
+
+/* ===== Sự cố: ưu tiên chiều rộng cho nội dung mô tả ===== */
+.incident-table-v2 .col-op-dept,
+.incident-table-v2 .op-dept-col{
+  width:135px!important;
+  min-width:125px!important;
+  max-width:145px!important;
+}
+.incident-table-v2 th:nth-child(5),
+.incident-table-v2 td:nth-child(5){
+  width:340px;
+  min-width:320px;
+  max-width:460px;
+}
+.incident-table-v2 td:nth-child(5).wrap-text{
+  max-width:none;
+  white-space:normal;
+  line-height:1.35;
+}
