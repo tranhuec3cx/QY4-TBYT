@@ -2336,3 +2336,82 @@ tbody tr:hover td{background:#eef7ff!important;}
   white-space:normal;
   overflow-wrap:anywhere;
 }
+
+
+/* ===== Khóa tỷ lệ 3 bảng nghiệp vụ: Sửa chữa / Bảo dưỡng / Kiểm định ===== */
+.repair-table-v2,
+.maintenance-table-v2,
+.inspection-records-table-v2{
+  width:100%;
+  table-layout:fixed;
+}
+.repair-table-v2{min-width:1800px;}
+.maintenance-table-v2{min-width:1650px;}
+.inspection-records-table-v2{min-width:1450px;}
+
+.repair-table-v2 th,
+.maintenance-table-v2 th,
+.inspection-records-table-v2 th{
+  white-space:normal;
+  line-height:1.25;
+}
+.repair-table-v2 .col-op-time,.repair-table-v2 .op-time-col,
+.repair-table-v2 .col-op-device,.repair-table-v2 .op-device-col,
+.repair-table-v2 .col-op-dept,.repair-table-v2 .op-dept-col,
+.maintenance-table-v2 .col-op-time,.maintenance-table-v2 .op-time-col,
+.maintenance-table-v2 .col-op-device,.maintenance-table-v2 .op-device-col,
+.maintenance-table-v2 .col-op-dept,.maintenance-table-v2 .op-dept-col,
+.inspection-records-table-v2 .col-op-time,.inspection-records-table-v2 .op-time-col,
+.inspection-records-table-v2 .col-op-device,.inspection-records-table-v2 .op-device-col,
+.inspection-records-table-v2 .col-op-dept,.inspection-records-table-v2 .op-dept-col{
+  width:auto!important;
+  min-width:0!important;
+  max-width:none!important;
+}
+.repair-table-v2 .compact-actions,
+.maintenance-table-v2 .compact-actions,
+.inspection-records-table-v2 .compact-actions{min-width:0;}
+
+/* Sửa chữa: ưu tiên Thiết bị, Nguyên nhân hỏng, Tóm tắt xử lý */
+.repair-table-v2 col.repair-col-stt{width:3%;}
+.repair-table-v2 col.repair-col-time{width:7%;}
+.repair-table-v2 col.repair-col-device{width:16%;}
+.repair-table-v2 col.repair-col-dept{width:9%;}
+.repair-table-v2 col.repair-col-issue{width:15%;}
+.repair-table-v2 col.repair-col-method{width:6%;}
+.repair-table-v2 col.repair-col-person{width:7%;}
+.repair-table-v2 col.repair-col-status{width:8%;}
+.repair-table-v2 col.repair-col-after{width:8%;}
+.repair-table-v2 col.repair-col-summary{width:11%;}
+.repair-table-v2 col.repair-col-note{width:4%;}
+.repair-table-v2 col.repair-col-actions{width:6%;}
+.repair-table-v2 td:nth-child(5),
+.repair-table-v2 td:nth-child(10){white-space:normal;overflow-wrap:anywhere;}
+
+/* Bảo dưỡng: ưu tiên Thiết bị và Nội dung */
+.maintenance-table-v2 col.maint-col-stt{width:3%;}
+.maintenance-table-v2 col.maint-col-time{width:7%;}
+.maintenance-table-v2 col.maint-col-device{width:17%;}
+.maintenance-table-v2 col.maint-col-dept{width:9%;}
+.maintenance-table-v2 col.maint-col-type{width:8%;}
+.maintenance-table-v2 col.maint-col-content{width:19%;}
+.maintenance-table-v2 col.maint-col-result{width:6%;}
+.maintenance-table-v2 col.maint-col-performer{width:8%;}
+.maintenance-table-v2 col.maint-col-vendor{width:6%;}
+.maintenance-table-v2 col.maint-col-next{width:7%;}
+.maintenance-table-v2 col.maint-col-file{width:4%;}
+.maintenance-table-v2 col.maint-col-actions{width:6%;}
+.maintenance-table-v2 td:nth-child(6){white-space:normal;overflow-wrap:anywhere;}
+
+/* Kiểm định: ưu tiên Thiết bị và Đơn vị kiểm định */
+.inspection-records-table-v2 col.insp-col-next{width:9%;}
+.inspection-records-table-v2 col.insp-col-time{width:8%;}
+.inspection-records-table-v2 col.insp-col-device{width:19%;}
+.inspection-records-table-v2 col.insp-col-dept{width:11%;}
+.inspection-records-table-v2 col.insp-col-type{width:8%;}
+.inspection-records-table-v2 col.insp-col-org{width:15%;}
+.inspection-records-table-v2 col.insp-col-cert{width:8%;}
+.inspection-records-table-v2 col.insp-col-result{width:7%;}
+.inspection-records-table-v2 col.insp-col-file{width:5%;}
+.inspection-records-table-v2 col.insp-col-actions{width:10%;}
+.inspection-records-table-v2 td:nth-child(6){white-space:normal;overflow-wrap:anywhere;}
