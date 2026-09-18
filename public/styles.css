@@ -2272,3 +2272,25 @@ tbody tr:hover td{background:#eef7ff!important;}
   .report-filter-grid-v5{grid-template-columns:repeat(4,minmax(0,1fr));}
   .report-filter-grid-v5 .field-wide{grid-column:span 2;}
 }
+
+
+/* ===== Chuẩn cột thông tin dùng chung: Sự cố / Sửa chữa / Bảo dưỡng / Kiểm định ===== */
+.operation-table td{vertical-align:top;}
+.operation-table .col-op-time,.operation-table .op-time-col{width:96px;min-width:96px;max-width:96px;text-align:center;}
+.operation-table .col-op-device,.operation-table .op-device-col{width:280px;min-width:260px;max-width:300px;}
+.operation-table .col-op-dept,.operation-table .op-dept-col{width:190px;min-width:180px;max-width:220px;}
+.op-time-cell{display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap;line-height:1.2;}
+.op-time-date{font-weight:700;color:#173a5e;}
+.op-time-clock{font-size:12px;color:#69809a;}
+.op-device-cell{display:flex;flex-direction:column;gap:2px;line-height:1.25;}
+.op-device-name{font-weight:700;color:#17324d;}
+.op-device-meta{font-size:12px;color:#6a7f94;white-space:normal;overflow-wrap:anywhere;}
+.op-device-meta span{font-weight:700;color:#5a7189;}
+.op-device-code{font-family:Consolas,'Courier New',monospace;color:#155da6;}
+.op-dept-cell{display:flex;flex-direction:column;gap:4px;line-height:1.25;}
+.op-dept-code{font-weight:800;color:#17324d;}
+.op-location{font-size:13px;color:#526b84;white-space:normal;overflow-wrap:anywhere;}
+@media (max-width:1100px){
+  .operation-table .col-op-device,.operation-table .op-device-col{min-width:240px;}
+  .operation-table .col-op-dept,.operation-table .op-dept-col{min-width:170px;}
+}

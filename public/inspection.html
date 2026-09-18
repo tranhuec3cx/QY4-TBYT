@@ -24,7 +24,7 @@
       </section>
       <section class="card">
         <div class="table-card-header"><h3 id="countLabel">0 bản ghi</h3></div>
-        <div class="table-wrap scroll-area"><table><thead><tr><th class="col-stt">STT</th><th class="col-time">Thời gian</th><th>Mã TB</th><th>Thiết bị</th><th class="col-dept">Khoa</th><th>Loại bảo dưỡng</th><th>Nội dung</th><th>Kết quả</th><th>Người thực hiện</th><th>Đơn vị</th><th>Lần tiếp theo</th><th>File</th><th class="col-actions">Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div><div class="table-footer-actions"><button class="btn btn-primary" id="exportMaintBtn">Xuất Excel</button></div>
+        <div class="table-wrap scroll-area"><table class="operation-table"><thead><tr><th class="col-stt">STT</th><th class="col-op-time">Thời gian</th><th class="col-op-device">Thiết bị</th><th class="col-op-dept">Khoa / Vị trí</th><th>Loại bảo dưỡng</th><th>Nội dung</th><th>Kết quả</th><th>Người thực hiện</th><th>Đơn vị</th><th>Lần tiếp theo</th><th>File</th><th class="col-actions">Thao tác</th></tr></thead><tbody id="rows"></tbody></table></div><div class="table-footer-actions"><button class="btn btn-primary" id="exportMaintBtn">Xuất Excel</button></div>
       </section>
       <section class="card">
         <div class="table-card-header"><h3 id="formTitle">Phiếu bảo dưỡng</h3><div class="small">Có thể tải lên biên bản bảo dưỡng, phiếu kiểm tra, ảnh hiện trạng hoặc tài liệu liên quan.</div></div>
@@ -51,7 +51,7 @@
       </section>
     </main>
   </div>
-  <script src="/api.js"></script>
+  <script src="/api.js"></script>\n  <script src="/operation-table-cells.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/inspection.js"></script>
   <script src="/rc1-device-picker-fix.js"></script>
