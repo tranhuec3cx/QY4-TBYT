@@ -21,13 +21,10 @@
     return `${device.device_code || device.serial || "TB-" + device.id} - ${device.name || ""}${extra ? " (" + extra + ")" : ""}`;
   }
 
-  function genericFind(value) {
-    const raw = String(value || "").trim();
-    if (!raw) return null;
-    const nv = normalize(raw);
-    const list = devicesList();
-    return list.find(d => normalize(labelFor(d)) === nv)
-      || list.find(d => normalize([d.device_code, d.name, d.model, d.serial, d.insurance_code, d.department_code, d.department_name].filter(Boolean).join(" ")).includes(nv));
+  function findExactDevice(value) {
+    const wanted = normalize(value);
+    if (!wanted) return null;
+    return devicesList().find(device => normalize(labelFor(device)) === wanted) || null;
   }
 
   function fillRelatedFields() {
@@ -39,36 +36,21 @@
     } catch (_) {}
   }
 
-  function commitDeviceSelection() {
+  function syncSelection(rewriteLabel) {
     const input = document.getElementById("deviceSearch");
     const hidden = document.getElementById("deviceId");
     if (!input || !hidden) return null;
 
-    let found = null;
-    try {
-      if (typeof findDeviceBySearch === "function") found = findDeviceBySearch(input.value);
-    } catch (_) {}
-    if (!found) {
-      try {
-        if (typeof resolveMaintDevice === "function") found = resolveMaintDevice();
-      } catch (_) {}
-    }
-    if (!found) found = genericFind(input.value);
+    const found = findExactDevice(input.value);
+    hidden.value = found ? found.id : "";
+    if (found && rewriteLabel) input.value = labelFor(found);
+    fillRelatedFields();
+    input.classList.toggle("device-picker-invalid", Boolean(input.value.trim()) && !found);
+    return found;
+  }
 
-    if (found) {
-      hidden.value = found.id;
-      input.value = labelFor(found);
-      fillRelatedFields();
-      input.classList.remove("device-picker-invalid");
-      return found;
-    }
-
-    if (!String(input.value || "").trim()) {
-      hidden.value = "";
-      fillRelatedFields();
-      input.classList.remove("device-picker-invalid");
-    }
-    return null;
+  function commitDeviceSelection() {
+    return syncSelection(true);
   }
 
   function attach() {
@@ -76,10 +58,11 @@
     if (!input || input.dataset.rc1PickerFix === "1") return;
     input.dataset.rc1PickerFix = "1";
 
-    input.addEventListener("input", () => setTimeout(commitDeviceSelection, 0));
+    // Khi đang gõ chỉ xóa lựa chọn cũ; không tự lấy kết quả đầu tiên và đóng datalist.
+    input.addEventListener("input", () => syncSelection(false));
     input.addEventListener("change", commitDeviceSelection);
     input.addEventListener("blur", () => setTimeout(commitDeviceSelection, 80));
-    input.addEventListener("keydown", (event) => {
+    input.addEventListener("keydown", event => {
       if (event.key === "Enter") setTimeout(commitDeviceSelection, 0);
     });
   }

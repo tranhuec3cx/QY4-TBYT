@@ -4,9 +4,8 @@ function deviceSearchLabel(d){ return [d.device_code, d.name, d.model, d.serial 
 function findDeviceBySearch(value){
   const raw = String(value || '').trim();
   if(!raw) return null;
-  const rawNorm = raw.toLowerCase();
-  return DEVICES.find(d => deviceSearchLabel(d).toLowerCase() === rawNorm)
-    || DEVICES.find(d => [d.device_code,d.name,d.model,d.serial,d.insurance_code,d.department_code].filter(Boolean).join(' ').toLowerCase().includes(rawNorm));
+  const rawNorm = raw.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return DEVICES.find(d => deviceSearchLabel(d).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === rawNorm) || null;
 }
 function setSelectedDevice(device){
   q('deviceId').value = device ? device.id : '';

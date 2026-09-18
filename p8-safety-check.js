@@ -67,6 +67,8 @@ assert.ok(scopeGuard.includes("['Đã hoàn thành', 'Không sửa được', '�
 assert.ok(inspectionHtml.includes('/rc1-device-picker-fix.js'), 'Bảo dưỡng phải nạp bản vá chọn thiết bị RC1.');
 assert.ok(inspectionsHtml.includes('/rc1-device-picker-fix.js'), 'Kiểm định phải nạp bản vá chọn thiết bị RC1.');
 assert.ok(pickerFix.includes('commitDeviceSelection'), 'Thiếu logic chốt thiết bị từ datalist/Tab/Enter/blur.');
+assert.ok(pickerFix.includes('findExactDevice') && pickerFix.includes('syncSelection(false)'), 'Ô chọn thiết bị phải giữ từ khóa đang gõ và chỉ chốt kết quả khớp đầy đủ.');
+assert.ok(!pickerFix.includes('genericFind'), 'Không được tự động lấy kết quả đầu tiên khi người dùng mới gõ một phần tên thiết bị.');
 
 // RC1 - đồng bộ topbar Bảo dưỡng/Kiểm định với các màn hình nghiệp vụ khác.
 assert.ok(inspectionHtml.includes('class="page-actions"') && inspectionHtml.includes('id="addMaintTopBtn"'), 'Bảo dưỡng phải đặt nút Thêm bảo dưỡng trong page-actions ở góc trên phải.');
