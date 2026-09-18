@@ -28,7 +28,13 @@ pages.forEach(name => {
   const html = fs.readFileSync('public/' + name,'utf8');
   assert.ok(html.includes('/operation-table-cells.js'), name + ' phải nạp renderer chung.');
   assert.ok(html.includes('operation-table'), name + ' phải dùng style bảng nghiệp vụ chung.');
+  assert.ok(!html.includes('</script>\\n'), name + ' không được chứa ký tự \\n dạng text giữa các script.');
 });
+
+const ticketsHtml = fs.readFileSync('public/tickets.html','utf8');
+assert.ok(ticketsHtml.includes('class="col-op-device">Thiết bị</th>'), 'Sự cố phải gộp Mã/Tên thiết bị thành cột Thiết bị.');
+assert.ok(ticketsHtml.includes('class="col-op-dept">Khoa / Vị trí</th>'), 'Sự cố phải dùng cột Khoa / Vị trí.');
+assert.ok(!ticketsHtml.includes('<th>Mã thiết bị</th><th>Tên thiết bị</th><th>Vị trí</th>'), 'Sự cố không được quay lại header tách 3 cột cũ.');
 ['tickets.js','maintenance.js','inspection.js','inspections.js'].forEach(name => {
   const js = fs.readFileSync('public/' + name,'utf8');
   new Function(js);
