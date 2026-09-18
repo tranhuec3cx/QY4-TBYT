@@ -40,10 +40,10 @@
       <section class="card repair-table-card">
         <div class="table-card-header"><h3 id="countLabel">0 bản ghi</h3></div>
         <div class="table-wrap scroll-area">
-          <table class="repair-table-v2">
+          <table class="repair-table-v2 operation-table">
             <thead>
               <tr>
-                <th class="col-stt">STT</th><th class="col-time">Tiếp nhận</th><th>Thiết bị</th><th class="col-dept">Khoa</th><th>Tình trạng/Nguyên nhân hỏng</th><th>Hình thức</th><th>Đơn vị xử lý</th><th class="col-status">Trạng thái xử lý</th><th>TTTB sau sửa chữa</th><th>Tóm tắt xử lý</th><th>Ghi chú</th><th class="col-actions">Thao tác</th>
+                <th class="col-stt">STT</th><th class="col-op-time">Thời gian</th><th class="col-op-device">Thiết bị</th><th class="col-op-dept">Khoa / Vị trí</th><th>Tình trạng/Nguyên nhân hỏng</th><th>Hình thức</th><th>Đơn vị xử lý</th><th class="col-status">Trạng thái xử lý</th><th>TTTB sau sửa chữa</th><th>Tóm tắt xử lý</th><th>Ghi chú</th><th class="col-actions">Thao tác</th>
               </tr>
             </thead>
             <tbody id="rows"></tbody>
@@ -120,7 +120,7 @@
       </dialog>
     </main>
   </div>
-  <script src="/api.js"></script>
+  <script src="/api.js"></script>\n  <script src="/operation-table-cells.js"></script>
   <script src="/vendor/xlsx.full.min.js"></script>
   <script src="/maintenance.js"></script>
   <script src="/rc1-local-time-fix.js"></script>
