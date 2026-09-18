@@ -10,7 +10,7 @@ function resolveIncidentDevice(){
   const raw = q("deviceSearch") ? q("deviceSearch").value.trim() : "";
   if(!raw) return null;
   const rawNorm = norm(raw);
-  return DEVICES.find(d => norm(deviceLabel(d)) === rawNorm) || DEVICES.find(d => norm([d.device_code,d.name,d.serial,d.model].join(" ")).includes(rawNorm));
+  return DEVICES.find(d => norm(deviceLabel(d)) === rawNorm) || null;
 }
 function setIncidentDevice(d){
   if(q("deviceId")) q("deviceId").value = d ? d.id : "";
@@ -247,6 +247,6 @@ async function loadData(){
 function exportIncidentsExcel(){
   exportA4Report('incidents', { fromId: 'fromDate', toId: 'toDate' });
 }
-document.addEventListener("DOMContentLoaded", async()=>{ setLayout("tickets","Sự cố","Khoa sử dụng báo hỏng, Khoa Trang bị chuyển sửa chữa khi cần"); setDefaultDateRange(); await loadData(); resetIncidentForm(); q("deviceSearch").addEventListener("input", () => { const d = resolveIncidentDevice(); if(d) setIncidentDevice(d); else { q("deviceId").value=""; fillDeviceMeta(); } });
-  q("deviceSearch").addEventListener("change", () => { const d = resolveIncidentDevice(); if(d) setIncidentDevice(d); }); q("status").addEventListener("change", toggleLocalResolutionField); toggleLocalResolutionField(); q("incidentForm").addEventListener("submit", saveIncident); q("resetIncidentBtn").onclick=resetIncidentForm; q("newIncidentBtn").onclick=()=>q("incidentForm").scrollIntoView({behavior:"smooth"}); q("filterBtn").onclick=async()=>{ await fetchIncidentRows(); applyFilter(); }; q("clearFilterBtn").onclick=clearFilters; ["searchInput","deviceFilter","statusFilter"].forEach(id=>{ const el=q(id); el.addEventListener("input", applyFilter); el.addEventListener("change", applyFilter); });
+document.addEventListener("DOMContentLoaded", async()=>{ setLayout("tickets","Sự cố","Khoa sử dụng báo hỏng, Khoa Trang bị chuyển sửa chữa khi cần"); setDefaultDateRange(); await loadData(); resetIncidentForm(); q("deviceSearch").addEventListener("input", () => { const d = resolveIncidentDevice(); q("deviceId").value=d?d.id:""; fillDeviceMeta(); });
+  q("deviceSearch").addEventListener("change", () => { const d = resolveIncidentDevice(); if(d) setIncidentDevice(d); else { q("deviceId").value=""; fillDeviceMeta(); } }); q("status").addEventListener("change", toggleLocalResolutionField); toggleLocalResolutionField(); q("incidentForm").addEventListener("submit", saveIncident); q("resetIncidentBtn").onclick=resetIncidentForm; q("newIncidentBtn").onclick=()=>q("incidentForm").scrollIntoView({behavior:"smooth"}); q("filterBtn").onclick=async()=>{ await fetchIncidentRows(); applyFilter(); }; q("clearFilterBtn").onclick=clearFilters; ["searchInput","deviceFilter","statusFilter"].forEach(id=>{ const el=q(id); el.addEventListener("input", applyFilter); el.addEventListener("change", applyFilter); });
   ["fromDate","toDate"].forEach(id=>{ const el=q(id); el.addEventListener("change", async()=>{ await fetchIncidentRows(); applyFilter(); }); }); q("exportIncidentExcelBtn").onclick=exportIncidentsExcel; });

@@ -14,8 +14,7 @@ function resolveMaintDevice(){
   const v = String(q("deviceSearch")?.value || "").trim();
   if(!v){ q("deviceId").value = ""; fillMaintDeviceInfo(); return null; }
   const nv = norm(v);
-  const found = DEVICES.find(d => deviceSearchLabel(d) === v)
-    || DEVICES.find(d => norm([d.device_code,d.name,d.model,d.serial,d.insurance_code,d.department_code,d.department_name].join(" ")).includes(nv));
+  const found = DEVICES.find(d => norm(deviceSearchLabel(d)) === nv) || null;
   q("deviceId").value = found ? found.id : "";
   fillMaintDeviceInfo();
   return found;
