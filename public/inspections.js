@@ -13,7 +13,7 @@ function setSelectedDevice(device){
   fillInfo();
 }
 function fillInfo(){const m=meta(q('deviceId').value); q('dept').value=m.department_code||''; q('location').value=m.location||'';}
-function resetForm(){q('form').reset(); q('recordId').value=''; CURRENT_INSPECTION_FILE_PATH=''; if(q('fileUpload')) q('fileUpload').value=''; setSelectedDevice(null);}
+function resetForm(){q('form').reset(); q('recordId').value=''; CURRENT_INSPECTION_FILE_PATH=''; if(q('fileUpload')) q('fileUpload').value=''; if(q('deviceSearch')) q('deviceSearch').disabled=false; setSelectedDevice(null);}
 function daysTo(dateStr){ if(!dateStr) return 99999; const t=new Date(dateStr+'T00:00:00').getTime(); const n=new Date(); n.setHours(0,0,0,0); return Math.ceil((t-n.getTime())/86400000); }
 function dueTag(d){ const x=daysTo(d); if(x<0) return '<span class="tag red">Quá hạn</span>'; if(x<=30) return '<span class="tag orange">Sắp hạn</span>'; return '<span class="tag green">Còn hạn</span>'; }
 function esc(value){ return String(value ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c])); }
@@ -43,7 +43,7 @@ function render(data){
   }).join(''):'<tr><td colspan="10" class="center-empty">Chưa có dữ liệu.</td></tr>';
 }
 function applyFilter(){const text=q('searchInput').value.toLowerCase(); const dev=q('deviceFilter').value; const typ=q('typeFilter').value; const org=q('orgFilter') ? q('orgFilter').value : 'ALL'; const from=q('fromDate')?.value||''; const to=q('toDate')?.value||''; FILTERED=ROWS.filter(r=>inDateRange(r.inspection_date,from,to)&&(!text||[r.device_code,r.device_name,r.certificate_no,r.organization].join(' ').toLowerCase().includes(text))&&(dev==='ALL'||String(r.device_id)===dev)&&(typ==='ALL'||r.type===typ)&&(org==='ALL'||(r.organization||'')===org)).sort((a,b)=>daysTo(a.next_date)-daysTo(b.next_date)); render(FILTERED);}
-function editRow(id){const r=ROWS.find(x=>x.id===id); if(!r)return; q('recordId').value=r.id; setSelectedDevice(meta(r.device_id)); q('type').value=r.type||'Kiểm định'; q('inspectionDate').value=toDateTimeLocalValue(r.inspection_date||''); q('organization').value=r.organization||''; q('certificateNo').value=r.certificate_no||''; q('result').value=r.result||'Đạt'; q('nextDate').value=r.next_date||''; CURRENT_INSPECTION_FILE_PATH = attachedFilePath(r); q('fileNote').value=CURRENT_INSPECTION_FILE_PATH ? fileNameFromPath(r.file_note) : (r.file_note||''); q('note').value=r.note||''; q('formCard').scrollIntoView({behavior:'smooth'});}
+function editRow(id){const r=ROWS.find(x=>x.id===id); if(!r)return; q('recordId').value=r.id; setSelectedDevice(meta(r.device_id)); q('deviceSearch').disabled=true; q('type').value=r.type||'Kiểm định'; q('inspectionDate').value=toDateTimeLocalValue(r.inspection_date||''); q('organization').value=r.organization||''; q('certificateNo').value=r.certificate_no||''; q('result').value=r.result||'Đạt'; q('nextDate').value=r.next_date||''; CURRENT_INSPECTION_FILE_PATH = attachedFilePath(r); q('fileNote').value=CURRENT_INSPECTION_FILE_PATH ? fileNameFromPath(r.file_note) : (r.file_note||''); q('note').value=r.note||''; q('formCard').scrollIntoView({behavior:'smooth'});}
 async function delRow(id){
   const reason = prompt('Nhập lý do hủy hồ sơ kiểm định/hiệu chuẩn:', 'Nhập nhầm / hồ sơ không còn áp dụng');
   if(reason === null) return;
@@ -51,7 +51,7 @@ async function delRow(id){
   await api(`/api/inspections/${id}`,{method:'DELETE',body:JSON.stringify({reason:reason.trim()})});
   await load();
 }
-async function load(){DEVICES=await api('/api/devices'); ROWS=await api('/api/inspections'); q('deviceFilter').innerHTML='<option value="ALL">Tất cả thiết bị</option>'+DEVICES.map(d=>`<option value="${d.id}">${d.device_code} - ${d.name}</option>`).join(''); if(q('inspectionDeviceOptions')) q('inspectionDeviceOptions').innerHTML=DEVICES.map(d=>`<option value="${deviceSearchLabel(d).replace(/"/g,'&quot;')}"></option>`).join(''); if(q('orgFilter')){const orgs=[...new Set(ROWS.map(r=>r.organization).filter(Boolean))].sort(); q('orgFilter').innerHTML='<option value="ALL">Tất cả đơn vị</option>'+orgs.map(v=>`<option value="${v}">${v}</option>`).join('');} fillInfo(); applyFilter();}
+async function load(){DEVICES=await api('/api/devices'); ROWS=await api('/api/inspections'); q('deviceFilter').innerHTML='<option value="ALL">Tất cả thiết bị</option>'+DEVICES.map(d=>`<option value="${Number(d.id)}">${esc(d.device_code||'')} - ${esc(d.name||'')}</option>`).join(''); if(q('inspectionDeviceOptions')) q('inspectionDeviceOptions').innerHTML=DEVICES.map(d=>`<option value="${esc(deviceSearchLabel(d))}"></option>`).join(''); if(q('orgFilter')){const orgs=[...new Set(ROWS.map(r=>r.organization).filter(Boolean))].sort(); q('orgFilter').innerHTML='<option value="ALL">Tất cả đơn vị</option>'+orgs.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');} fillInfo(); applyFilter();}
 function exportExcel(){
   exportA4Report('inspections', { fromId: 'fromDate', toId: 'toDate' });
 }
