@@ -25,7 +25,24 @@ function fileCell(r){
   if(!path) return "";
   return `<a class="btn btn-secondary btn-sm" href="${esc(path)}" target="_blank" rel="noopener">Tải file</a><div class="small file-name-line">${esc(fileNameFromPath(path))}</div>`;
 }
-function render(data){q('countLabel').textContent=`${data.length} bản ghi`; q('rows').innerHTML=data.length?data.map(r=>`<tr><td class="time-cell">${formatDateTimeVN(r.inspection_date)}</td><td class="device-code">${esc(r.device_code)}</td><td>${esc(r.device_name)}</td><td class="code-only">${esc(r.department_code||'')}</td><td>${esc(r.type||'')}</td><td>${esc(r.organization||'')}</td><td>${formatDateVN(r.next_date)}<br>${dueTag(r.next_date)}</td><td><span class="tag ${statusTagClass(r.result)}">${esc(r.result||'')}</span></td><td>${fileCell(r)}</td><td><div class="table-actions compact-actions"><button class="btn btn-secondary" onclick="openDeviceProfile(${r.device_id})">Xem</button><button class="btn" onclick="editRow(${r.id})">Cập nhật</button><button class="btn btn-danger" onclick="delRow(${r.id})">Hủy</button></div></td></tr>`).join(''):'<tr><td colspan="10" class="center-empty">Chưa có dữ liệu.</td></tr>';}
+function render(data){
+  q('countLabel').textContent=`${data.length} bản ghi`;
+  q('rows').innerHTML=data.length?data.map(r=>{
+    const d=meta(r.device_id)||{};
+    return `<tr>
+      <td>${formatDateVN(r.next_date)}<br>${dueTag(r.next_date)}</td>
+      <td class="op-time-col">${QY4OperationCells.time(r.inspection_date)}</td>
+      <td class="op-device-col">${QY4OperationCells.device(r,d)}</td>
+      <td class="op-dept-col">${QY4OperationCells.departmentLocation(r,d)}</td>
+      <td>${esc(r.type||'')}</td>
+      <td>${esc(r.organization||'')}</td>
+      <td>${esc(r.certificate_no||'')}</td>
+      <td><span class="tag ${statusTagClass(r.result)}">${esc(r.result||'')}</span></td>
+      <td>${fileCell(r)}</td>
+      <td><div class="table-actions compact-actions"><button class="btn btn-secondary" onclick="openDeviceProfile(${r.device_id})">Xem</button><button class="btn" onclick="editRow(${r.id})">Cập nhật</button><button class="btn btn-danger" onclick="delRow(${r.id})">Hủy</button></div></td>
+    </tr>`;
+  }).join(''):'<tr><td colspan="10" class="center-empty">Chưa có dữ liệu.</td></tr>';
+}
 function applyFilter(){const text=q('searchInput').value.toLowerCase(); const dev=q('deviceFilter').value; const typ=q('typeFilter').value; const org=q('orgFilter') ? q('orgFilter').value : 'ALL'; const from=q('fromDate')?.value||''; const to=q('toDate')?.value||''; FILTERED=ROWS.filter(r=>inDateRange(r.inspection_date,from,to)&&(!text||[r.device_code,r.device_name,r.certificate_no,r.organization].join(' ').toLowerCase().includes(text))&&(dev==='ALL'||String(r.device_id)===dev)&&(typ==='ALL'||r.type===typ)&&(org==='ALL'||(r.organization||'')===org)).sort((a,b)=>daysTo(a.next_date)-daysTo(b.next_date)); render(FILTERED);}
 function editRow(id){const r=ROWS.find(x=>x.id===id); if(!r)return; q('recordId').value=r.id; setSelectedDevice(meta(r.device_id)); q('type').value=r.type||'Kiểm định'; q('inspectionDate').value=toDateTimeLocalValue(r.inspection_date||''); q('organization').value=r.organization||''; q('certificateNo').value=r.certificate_no||''; q('result').value=r.result||'Đạt'; q('nextDate').value=r.next_date||''; CURRENT_INSPECTION_FILE_PATH = attachedFilePath(r); q('fileNote').value=CURRENT_INSPECTION_FILE_PATH ? fileNameFromPath(r.file_note) : (r.file_note||''); q('note').value=r.note||''; q('formCard').scrollIntoView({behavior:'smooth'});}
 async function delRow(id){
